@@ -2,10 +2,8 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const schema = new Schema({
-    email: { type: String, unique: true, required: true },
-    hash: { type: String, required: true },
-    userId: { type: String, required: false },
-    status: { type: Boolean, required: false }
+    counterId: { type: String, unique: true, required: true },
+    sequence_value: { type: Number, required: true },
 },
 { timestamps: true }
 );
@@ -19,4 +17,4 @@ schema.set('toJSON', {
     }
 });
 
-module.exports = mongoose.model('User', schema);
+module.exports = mongoose.model('Counters', schema);
