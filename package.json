@@ -1,0 +1,19 @@
+{
+  "name": "ssk-api",
+  "version": "1.0.0",
+  "description": "nodejs api for ssk matrimonial",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deepakmelugiri/node-ssk-api.git"
+  },
+  "author": "martingale technologies",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/deepakmelugiri/node-ssk-api/issues"
+  },
+  "homepage": "https://github.com/deepakmelugiri/node-ssk-api#readme"
+}
