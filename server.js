@@ -1,47 +1,26 @@
-const express = require("express");
-const bodyParser = require("body-parser");
-const cors = require("cors");
-
+const express = require('express');
 const app = express();
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const jwt = require('./app/helpers/jwt');
+const errorHandler = require('./app/helpers/error-handler');
 
-var corsOptions = {
-  origin: "http://localhost:8081"
-};
-
-app.use(cors(corsOptions));
-
-// parse requests of content-type - application/json
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(cors());
 
-// parse requests of content-type - application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: true }));
+// use JWT auth to secure the api
+app.use(jwt());
 
-const db = require("./app/models");
-db.mongoose
-  .connect(db.url, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  })
-  .then(() => {
-    console.log("Connected to the database!");
-  })
-  .catch(err => {
-    console.log("Cannot connect to the database!", err);
-    process.exit();
-  });
+// api routes
+app.use('/users', require('./app/controllers/userRegister.controller'));
+app.use('/counter', require('./app/controllers/counter.controller'));
 
-// simple route
-app.get("/", (req, res) => {
-  res.json({ message: "Welcome to SSK matrimonial node api" });
+// global error handler
+app.use(errorHandler);
+
+// start server
+const port = process.env.NODE_ENV === 'production' ? (process.env.PORT || 80) : 4000;
+const server = app.listen(port, function () {
+    console.log('Server listening on port ' + port);
 });
-
-require("./app/routes/userRegister.routes")(app);
-
-// set port, listen for requests
-const PORT = process.env.PORT || 8091;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}.`);
-});
-
-
-
