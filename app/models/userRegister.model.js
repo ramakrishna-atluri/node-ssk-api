@@ -13,6 +13,6 @@ module.exports = mongoose => {
       return object;
     });
   
-    const userRegister = mongoose.model("userRegister", schema);
+    const userRegister = mongoose.model("Users", schema);
     return userRegister;
   };

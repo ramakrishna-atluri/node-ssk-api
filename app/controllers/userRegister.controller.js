@@ -16,8 +16,8 @@ exports.create = (req, res) => {
       });
     
       // Save new User in the database
-      userRegister
-        .save(newUser)
+      newUser
+        .save()
         .then(data => {
           res.send(data);
         })
