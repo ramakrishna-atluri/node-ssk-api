@@ -5,6 +5,9 @@ module.exports = app => {
   
     // Create a new user
     router.post("/", UserRegister.create);
+
+    //authenticate user
+    router.post("/", UserRegister.authenticate);
   
     // Retrieve all User
     router.get("/", UserRegister.findAll);

@@ -6,5 +6,6 @@ mongoose.Promise = global.Promise;
 
 module.exports = {
     User: require('../models/userRegister.model'),
-    Counter: require('../models/counter.model')
+    Counter: require('../models/counter.model'),
+    UserProfile: require('../models/userProfile.model')
 };

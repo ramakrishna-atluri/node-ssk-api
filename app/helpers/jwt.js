@@ -11,8 +11,7 @@ function jwt() {
             // public routes that don't require authentication
             '/users/authenticate',
             '/users/register',
-            '/counter/createCounter',
-            '/counter/upDateCounter'
+            '/profile/createProfile'
         ]
     });
 }

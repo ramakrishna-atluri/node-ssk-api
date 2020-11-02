@@ -27,13 +27,11 @@ async function updateCounter(sequenceName) {
     if (!await Counter.findOne({ counterId: sequenceName })) {
         throw 'counter "' + counterId + '" does not exist';
     }
-
     const counter =  await Counter.findOneAndUpdate(
         {counterId: sequenceName},
         {$inc:{sequence_value:1}},
         {retrunOriginal:false}
     );
-    console.log(counter.sequence_value);
     return counter.sequence_value;
 }
 
