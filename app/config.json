@@ -1,4 +1,4 @@
 {
-    "connectionString": "mongodb://localhost:27017/sskmatrimonial_db",
+    "connectionString": "mongodb+srv://dm_dev:1Q2w3e4r@cluster0.vbprc.mongodb.net/ssk_matrimonial?retryWrites=true&w=majority",
     "secret": "martingale"
 }

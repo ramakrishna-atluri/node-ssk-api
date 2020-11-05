@@ -2,17 +2,17 @@ const config = require('../config.json');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('../helpers/db');
-const counterService = require('../services/counter.service');
-const User = db.User;
+const userRegisterService = require('../services/userRegister.service');
+const UserProfile = db.UserProfile;
 
 module.exports = {
     authenticate,
     getAll,
     getById,
-    create,
+    createProfile,
+    getProfile,
     update,
-    delete: _delete,
-    getUserSequenceNumber
+    delete: _delete
 };
 
 async function authenticate({ email, password }) {
@@ -34,46 +34,39 @@ async function getById(id) {
     return await User.findById(id);
 }
 
-async function getUserSequenceNumber(userParam) {
-    const user = await User.findOne({ email: userParam });
-    return user.userId;
-}
-
-async function create(userParam) {
-    // validate
-    if (await User.findOne({ email: userParam.email })) {
-        throw 'email "' + userParam.email + '" is already taken';
+async function createProfile(profileParam) {
+    //validate
+    if (await UserProfile.find({ email: profileParam.contactInfo.email })) {
+        throw 'Profile with email"' + profileParam.contactInfo.email + '" already exists';
     }
 
-    const user = new User(userParam);
-
-    // hash password
-    if (userParam.password) {
-        user.hash = bcrypt.hashSync(userParam.password, 10);
-    }
-    user.status = true;
-    var counter = await counterService.updateCounter("userId");
-    user.userId = counter; 
-    // save user
-    await user.save();
+    const profile = new UserProfile(profileParam);
+    profile.profileId = await userRegisterService.getUserSequenceNumber(profileParam.contactInfo.email);
+    // save profile
+    await profile.save();
 }
 
-async function update(id, userParam) {
+async function getProfile(profileParam) {
+    //validate
+    return await UserProfile.find({ email: profileParam.contactInfo.email });
+}
+
+async function update(id, profileParam) {
     const user = await User.findById(id);
 
     // validate
     if (!user) throw 'User not found';
-    if (user.email !== userParam.email && await User.findOne({ email: userParam.email })) {
-        throw 'email "' + userParam.email + '" is already taken';
+    if (user.email !== profileParam.email && await User.findOne({ email: profileParam.email })) {
+        throw 'email "' + profileParam.email + '" is already taken';
     }
 
     // hash password if it was entered
-    if (userParam.password) {
-        userParam.hash = bcrypt.hashSync(userParam.password, 10);
+    if (profileParam.password) {
+        profileParam.hash = bcrypt.hashSync(profileParam.password, 10);
     }
 
-    // copy userParam properties to user
-    Object.assign(user, userParam);
+    // copy profileParam properties to user
+    Object.assign(user, profileParam);
     await user.save();
 }
 

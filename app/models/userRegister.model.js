@@ -5,7 +5,9 @@ const schema = new Schema({
     email: { type: String, unique: true, required: true },
     hash: { type: String, required: true },
     userId: { type: String, required: false },
-    status: { type: Boolean, required: false }
+    isActive: { type: Boolean, required: false },
+    isProfileComplete: { type: Boolean, required: false },
+    userRole: { type: String, required: false }
 },
 { timestamps: true }
 );
