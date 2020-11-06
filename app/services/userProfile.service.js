@@ -2,7 +2,7 @@ const config = require('../config.json');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('../helpers/db');
-const userRegisterService = require('../services/userRegister.service');
+const usersService = require('./users.service');
 const UserProfile = db.UserProfile;
 
 module.exports = {
@@ -41,7 +41,7 @@ async function createProfile(profileParam) {
     }
 
     const profile = new UserProfile(profileParam);
-    profile.profileId = await userRegisterService.getUserSequenceNumber(profileParam.contactInfo.email);
+    profile.profileId = await usersService.getUserSequenceNumber(profileParam.contactInfo.email);
     // save profile
     await profile.save();
 }
