@@ -1,7 +1,7 @@
 const { request } = require('express');
 const express = require('express');
 const router = express.Router();
-const userService = require('../services/userRegister.service');
+const userService = require('../services/users.service');
 
 // routes
 router.post('/authenticate', authenticate);
@@ -11,6 +11,7 @@ router.get('/current', getCurrent);
 router.get('/:id', getById);
 router.put('/:id', update);
 router.delete('/:id', _delete);
+router.post('/verify-email', verifyEmail);
 
 module.exports = router;
 
@@ -21,9 +22,15 @@ function authenticate(req, res, next) {
 }
 
 function register(req, res, next) {
-    userService.create(req.body)
+    userService.createUser(req.body)
         .then(() => res.json({}))
         .catch(err => next(err));
+}
+
+function verifyEmail(req, res, next) {
+    userService.verifyEmail(req.body)
+        .then(() => res.json({ message: 'Verification successful, you can now login' }))
+        .catch(next);
 }
 
 function getAll(req, res, next) {

@@ -42,9 +42,10 @@ const schema = new Schema({
   },
   contactInfo:{
     email: {type: String, required: true},
+    countryCode: {type: String, require: true},
     phone: {type: String, required: true},
-    emailVerified: {type: Boolean, required: false},
-    phoneVerified: {type: Boolean, required: false},
+    emailVerified: {type: Boolean, required: false, default: false},
+    phoneVerified: {type: Boolean, required: false, default: false},
   }
 },
 { timestamps: true }
