@@ -12,7 +12,9 @@ function jwt() {
             '/users/authenticate',
             '/counter/createCounter',
             '/users/register',
-            '/profile/createProfile'
+            '/users/verify-email',
+            '/users/forgot-password',
+            '/users/reset-password'
         ]
     });
 }

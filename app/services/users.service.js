@@ -18,7 +18,9 @@ module.exports = {
     getUserSequenceNumber,
     revokeToken,
     refreshToken,
-    verifyEmail
+    verifyEmail,
+    forgotPassword,
+    resetPassword
 };
 
 async function authenticate({ email, password, ipAddress }) {
@@ -159,7 +161,7 @@ async function createUser(userParam, origin) {
     user.userId = counter;
     user.roleId = 1;
     user.createdBy = !userParam.mediatorId ? user.userId : userParam.mediatorId;
-    user.isTemporaryPassword = !userParam.mediatorId ? true : false;
+    user.isTemporaryPassword = userParam.mediatorId ? true : false;
     user.verificationToken = randomTokenString();
       
     // save user
@@ -195,6 +197,57 @@ async function verifyEmail({ token }) {
 
     user.isVerified = true;
     user.verificationToken = undefined;
+    await user.save();
+}
+
+async function forgotPassword({ email }, origin) {
+    const user = await User.findOne({ email });
+
+    // always return ok response to prevent email enumeration
+    if (!user) return;
+
+    // create reset token that expires after 24 hours
+    user.resetToken = {
+        token: randomTokenString(),
+        expires: new Date(Date.now() + 24*60*60*1000)
+    };
+    await user.save();
+
+    // send email
+    await sendPasswordResetEmail(user, origin);
+}
+
+async function sendPasswordResetEmail(user, origin) {
+    let message;
+    if (origin) {
+        const resetUrl = `${origin}/users/reset-password?token=${user.resetToken.token}`;
+        message = `<p>Please click the below link to reset your password, the link will be valid for 1 day:</p>
+                   <p><a href="${resetUrl}">${resetUrl}</a></p>`;
+    } else {
+        message = `<p>Please use the below token to reset your password with the <code>/users/reset-password</code> api route:</p>
+                   <p><code>${user.resetToken.token}</code></p>`;
+    }
+
+    await sendEmail({
+        to: user.email,
+        subject: 'Sign-up Verification API - Reset Password',
+        html: `<h4>Reset Password Email</h4>
+               ${message}`
+    });
+}
+
+async function resetPassword({ token, password }) {
+    const user = await User.findOne({
+        'resetToken.token': token,
+        'resetToken.expires': { $gt: Date.now() }
+    });
+
+    if (!user) throw 'Invalid reset token';
+
+    // update password and remove reset token
+    user.hash = bcrypt.hashSync(password,10);
+    // user.passwordReset = Date.now();
+    user.resetToken = undefined;
     await user.save();
 }
 

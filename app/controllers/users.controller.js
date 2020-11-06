@@ -12,6 +12,8 @@ router.get('/:id', getById);
 router.put('/:id', update);
 router.delete('/:id', _delete);
 router.post('/verify-email', verifyEmail);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 module.exports = router;
 
@@ -30,6 +32,18 @@ function register(req, res, next) {
 function verifyEmail(req, res, next) {
     userService.verifyEmail(req.body)
         .then(() => res.json({ message: 'Verification successful, you can now login' }))
+        .catch(next);
+}
+
+function forgotPassword(req, res, next) {
+    userService.forgotPassword(req.body, req.get('origin'))
+        .then(() => res.json({ message: 'Please check your email for password reset instructions' }))
+        .catch(next);
+}
+
+function resetPassword(req, res, next) {
+    userService.resetPassword(req.body)
+        .then(() => res.json({ message: 'Password reset successful, you can now login' }))
         .catch(next);
 }
 
