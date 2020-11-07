@@ -37,13 +37,13 @@ function verifyEmail(req, res, next) {
 
 function forgotPassword(req, res, next) {
     userService.forgotPassword(req.body, req.get('origin'))
-        .then(() => res.json({ message: 'Please check your email for password reset instructions' }))
+        .then(response => response === "failure" ? res.status(401).json({ message: 'email is incorrect' }) : res.json({ message: 'Please check your email for password reset instructions' }))
         .catch(next);
 }
 
 function resetPassword(req, res, next) {
     userService.resetPassword(req.body)
-        .then(() => res.json({ message: 'Password reset successful, you can now login' }))
+        .then(response => response === "failure" ? res.status(401).json({ message: 'Temporary password is incorrect' }) : res.json({ message: 'Password reset successful, you can now login' }))
         .catch(next);
 }
 

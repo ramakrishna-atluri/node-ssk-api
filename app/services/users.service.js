@@ -204,7 +204,7 @@ async function forgotPassword({ email }, origin) {
     const user = await User.findOne({ email });
 
     // always return ok response to prevent email enumeration
-    if (!user) return;
+    if (!user) return "failure";
 
     // create reset token that expires after 24 hours
     user.resetToken = {
@@ -234,6 +234,8 @@ async function sendPasswordResetEmail(user, origin) {
         html: `<h4>Reset Password Email</h4>
                ${message}`
     });
+
+    return "Success";
 }
 
 async function resetPassword({ token, password }) {
@@ -242,14 +244,34 @@ async function resetPassword({ token, password }) {
         'resetToken.expires': { $gt: Date.now() }
     });
 
-    if (!user) throw 'Invalid reset token';
+    if (!user) return 'failure';
 
     // update password and remove reset token
     user.hash = bcrypt.hashSync(password,10);
     // user.passwordReset = Date.now();
     user.resetToken = undefined;
     await user.save();
+
+    await sendResetPasswordConfirmEmail(user);
 }
+
+async function sendResetPasswordConfirmEmail(user) {
+    let message;
+    if (user) {
+       //const resetUrl = `${origin}/users/reset-password?token=${user.resetToken.token}`;
+        message = `<p>Your password has been succesfully reset, please login.</p>`;
+    }
+
+    await sendEmail({
+        to: user.email,
+        subject: 'Sign-up Verification API - Reset Password',
+        html: `<h4>Reset Password Confirm Email</h4>
+               ${message}`
+    });
+
+    return "Success";
+}
+
 
 async function updateCounter(sequenceName) {
 
