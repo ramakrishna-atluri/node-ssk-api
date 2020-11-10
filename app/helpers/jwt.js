@@ -10,6 +10,7 @@ function jwt() {
         path: [
             // public routes that don't require authentication
             '/users/authenticate',
+            '/profile/createProfile',
             '/counter/createCounter',
             '/users/register',
             '/users/verify-email',

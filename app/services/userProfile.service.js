@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('../helpers/db');
 const usersService = require('./users.service');
+const counterService = require('./counter.service');
 const UserProfile = db.UserProfile;
 
 module.exports = {
@@ -36,12 +37,11 @@ async function getById(id) {
 
 async function createProfile(profileParam) {
     //validate
-    if (await UserProfile.find({ email: profileParam.contactInfo.email })) {
-        throw 'Profile with email"' + profileParam.contactInfo.email + '" already exists';
-    }
 
     const profile = new UserProfile(profileParam);
-    profile.profileId = await usersService.getUserSequenceNumber(profileParam.contactInfo.email);
+    var counter = await counterService.updateCounter("userProfileId");
+    profile.userProfileId = counter;
+    
     // save profile
     await profile.save();
 }
