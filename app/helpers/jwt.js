@@ -15,7 +15,8 @@ function jwt() {
             '/users/register',
             '/users/verify-email',
             '/users/forgot-password',
-            '/users/reset-password'
+            '/users/reset-password',
+            '/users/resend-verify-email',
         ]
     });
 }

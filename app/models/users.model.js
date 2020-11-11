@@ -6,7 +6,6 @@ const schema = new Schema({
     hash: { type: String, required: true },
     userId: { type: String, required: false },
     isActive: { type: Boolean, required: false, default: true },
-    isProfileComplete: { type: Boolean, required: false, default: false },
     createdBy: { type: String, required: false},//usreId, for mediator flow
     isTemporaryPassword: { type: Boolean, required: false, default: false},//temp password, for mediator flow
     roleId: { type: Number, required: false },//customer role, default:1
@@ -16,6 +15,8 @@ const schema = new Schema({
         expires: Date
     },
     isVerified: { type: Boolean, required: false, default: false },
+    isProfileComplete: { type: Boolean, required: false, default: false },
+    profileCompletePercentage: {type: Number, required: false, default: 0}
 
 },
 { timestamps: true }

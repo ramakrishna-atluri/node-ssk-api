@@ -39,10 +39,13 @@ async function createProfile(profileParam) {
     //validate
 
     const profile = new UserProfile(profileParam);
+    const user = new usersService.findOne({ userId: profileParam.userId });
     var counter = await counterService.updateCounter("userProfileId");
     profile.userProfileId = counter;
     
     // save profile
+    user.profileComepletePercentage += 80;
+    await user.save();
     await profile.save();
 }
 

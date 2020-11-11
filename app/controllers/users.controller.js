@@ -14,6 +14,8 @@ router.delete('/:id', _delete);
 router.post('/verify-email', verifyEmail);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+router.post('/resend-verify-email', resendVerifyEmail);
+
 
 module.exports = router;
 
@@ -31,7 +33,13 @@ function register(req, res, next) {
 
 function verifyEmail(req, res, next) {
     userService.verifyEmail(req.body)
-        .then(() => res.json({ message: 'Verification successful, you can now login' }))
+    .then(response => response === "failure" ? res.status(500).json({ message: 'verification failed' }) : res.json({ message: 'verification success' }))
+        .catch(next);
+}
+
+function resendVerifyEmail(req, res, next) {
+    userService.resendVerificationEmail(req.body.email)
+        .then(() => res.json({ message: 'verifcation code send' }))
         .catch(next);
 }
 
