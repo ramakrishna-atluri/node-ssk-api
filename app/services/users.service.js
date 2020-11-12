@@ -20,10 +20,12 @@ module.exports = {
     refreshToken,
     verifyEmail,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    resendVerificationEmail
 };
 
 async function authenticate({ email, password, ipAddress }) {
+
     const user = await User.findOne({ email });
     if (!user || !bcrypt.compareSync(password, user.hash)) {
         throw 'Email or password is incorrect';
@@ -66,8 +68,8 @@ async function refreshToken({ token, ipAddress }) {
 }
 
 function basicDetails(user) {
-    const { email, roleId, userId, isProfileComplete, createdBy, isActive,  isVerified } = user;
-    return { email, roleId, userId, isProfileComplete, createdBy, isActive,  isVerified };
+    const { email, roleId, userId, isProfileComplete, profileCompletePercentage, createdBy, isActive,  isVerified } = user;
+    return { email, roleId, userId, isProfileComplete, profileCompletePercentage, createdBy, isActive,  isVerified };
 }
 
 function tokenDetails(jwtToken, newRefreshToken) {
@@ -111,8 +113,9 @@ async function revokeToken({ token, ipAddress }) {
     await refreshToken.save();
 }
 
-async function sendVerificationEmail(user, origin) {
+async function sendVerificationEmail(email) {
     let message;
+
     if (origin) {
         const verifyUrl = `${origin}/users/verify-email?token=${user.verificationToken}`;
         message = `<p>Please click the below link to verify your email address:</p>
@@ -129,6 +132,25 @@ async function sendVerificationEmail(user, origin) {
                <p>Thanks for registering!</p>
                ${message}`
     });
+}
+
+async function resendVerificationEmail(email) {
+    const user = await User.findOne({ email })
+    user.verificationToken = randomTokenString();
+    await user.save();
+
+    let message;
+        message = `<p>Please use the below token to verify your email address with the <code>/user/verify-email</code> api route:</p>
+                   <p><code>${user.verificationToken}</code></p>`;
+
+    await sendEmail({
+        to: user.email,
+        subject: 'SSK Matrimonial - Verify Email',
+        html: `<h4>Verify Email</h4>
+               <p>Thanks for registering!</p>
+               ${message}`
+    });
+
 }
 
 async function getAll() {
@@ -193,11 +215,15 @@ async function update(id, userParam) {
 async function verifyEmail({ token }) {
     const user = await User.findOne({ verificationToken: token });
 
-    if (!user) throw 'Verification failed';
+    if (!user) return 'failure';
+    
 
     user.isVerified = true;
+    user.profileCompletePercentage += 5; 
     user.verificationToken = undefined;
     await user.save();
+
+    return 'success'
 }
 
 async function forgotPassword({ email }, origin) {

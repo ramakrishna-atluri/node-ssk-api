@@ -2,9 +2,9 @@ const config = require('../config.json');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('../helpers/db');
-const usersService = require('./users.service');
 const counterService = require('./counter.service');
 const UserProfile = db.UserProfile;
+const User = db.User;
 
 module.exports = {
     authenticate,
@@ -39,10 +39,13 @@ async function createProfile(profileParam) {
     //validate
 
     const profile = new UserProfile(profileParam);
+    const user = await User.findOne({ userId: profileParam.userId });
     var counter = await counterService.updateCounter("userProfileId");
     profile.userProfileId = counter;
     
     // save profile
+    user.profileComepletePercentage += 80;
+    await user.save();
     await profile.save();
 }
 
