@@ -7,13 +7,23 @@ const schema = new Schema({
   basicInfo:{
     firstName: { type: String, required: false },
     lastName: { type: String, required: false },
-    dob: { type: String, required: false },
     maritalStatus: { type: String, required: false },
     gender: { type: String, required: false },
     height: { type: String, required: false },
     bloodGroup: { type: String, required: false },
     bodyWeight: { type: String, required: false },
     disability: { type: String, required: false }
+  },
+  kundaliDetails:{
+    dob: { type: String, required: false },
+    birthTime: { type: String, required: false },
+    birthPlace: { type: String, required: false },
+    gothra: { type: String, required: false },
+    zodiacSign: { type: String, required: false },
+    nakshatra: { type: String, required: false },
+    charan: { type: String, required: false },
+    gan: { type: String, required: false },
+    naadi: { type: String, required: false },
   },
   familyInfo:{
     fatherName: { type: String, required: false },
