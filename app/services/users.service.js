@@ -5,6 +5,8 @@ const crypto = require("crypto");
 const db = require('../helpers/db');
 const counterService = require('./counter.service');
 const sendEmail = require('../helpers/send-email');
+const { sendOTP, verifyOTP} = require('../helpers/verify-phone');
+const { UserProfile } = require('../helpers/db');
 const User = db.User;
 const UserProfile = db.UserProfile;
 const UserPreferences= db.UserPreferences;
@@ -21,6 +23,7 @@ module.exports = {
     revokeToken,
     refreshToken,
     verifyEmail,
+    verifyPhone,
     forgotPassword,
     resetPassword,
     resendVerificationEmail
@@ -233,6 +236,30 @@ async function verifyEmail({ token }) {
     await user.save();
 
     return 'success'
+}
+
+async function verifyPhone({ phoneNumber, sessionId, userId, action, otpCode }) {
+
+    if(action === null) return 'failure';
+
+    if(action === 'sendOTP')
+    {
+        return sendOTP(phoneNumber);
+    }
+    else {
+        const verifyOPTResponse = verifyOTP(otpCode, sessionId);
+
+        if(verifyOPTResponse.Status && verifyOPTResponse.Details === 'OTP Matched'){
+            const userProfile = await UserProfile.findOne({ userId: userId });
+
+            if (!userProfile) return 'failure';
+
+            userProfile.contactInfo.phoneVerified = true;
+            await userProfile.save();
+        }
+
+        return verifyOPTResponse;
+    }
 }
 
 async function forgotPassword({ email }, origin) {

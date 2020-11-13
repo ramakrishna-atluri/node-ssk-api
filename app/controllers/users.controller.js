@@ -12,6 +12,7 @@ router.get('/:id', getById);
 router.put('/:id', update);
 router.delete('/:id', _delete);
 router.post('/verify-email', verifyEmail);
+router.post('/verify-phone', verifyPhone);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.post('/resend-verify-email', resendVerifyEmail);
@@ -34,6 +35,12 @@ function register(req, res, next) {
 function verifyEmail(req, res, next) {
     userService.verifyEmail(req.body)
     .then(response => response === "failure" ? res.status(500).json({ message: 'verification failed' }) : res.json({ message: 'verification success' }))
+        .catch(next);
+}
+
+function verifyPhone(req, res, next) {
+    userService.verifyPhone(req.body)
+    .then(response => response === "failure" ? res.status(500).json({ message: 'failed' }) : res.json({ message: 'success' }))
         .catch(next);
 }
 
