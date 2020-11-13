@@ -6,6 +6,8 @@ const db = require('../helpers/db');
 const counterService = require('./counter.service');
 const sendEmail = require('../helpers/send-email');
 const User = db.User;
+const UserProfile = db.UserProfile;
+const UserPreferences= db.UserPreferences;
 const RefreshToken = db.RefreshToken;
 
 module.exports = {
@@ -35,14 +37,21 @@ async function authenticate({ email, password, ipAddress }) {
     const jwtToken = generateJwtToken(user);
     const refreshToken = generateRefreshToken(user, ipAddress);
 
+
     // save refresh token
     await refreshToken.save();
+    const userDetailParams = basicDetails(user);
+          userDetailParams.tokenDetails = tokenDetails(jwtToken, refreshToken.token);
+    const userProfileParams = await UserProfile.findOne({userId : user.userId});
+    const userPreferenceParams = await UserPreferences.findOne({userId : user.userId});
 
-    // return basic details and tokens
-    return {
-        ...basicDetails(user),
-        ...tokenDetails(jwtToken, refreshToken.token)
-    };
+    let body = {
+        userDetails : userDetailParams,
+        userProfile : userProfileParams,
+        userPreferences : userPreferenceParams
+    }
+
+    return body;
 }
 
 async function refreshToken({ token, ipAddress }) {
