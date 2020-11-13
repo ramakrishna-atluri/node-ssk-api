@@ -18,6 +18,7 @@ app.use(jwt());
 app.use('/users', require('./app/controllers/users.controller'));
 app.use('/counter', require('./app/controllers/counter.controller'));
 app.use('/profile', require('./app/controllers/userProfile.controller'));
+app.use('/preferences', require('./app/controllers/userPreferences.controller'));
 
 // global error handler
 app.use(errorHandler);
