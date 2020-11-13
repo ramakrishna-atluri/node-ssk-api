@@ -14,6 +14,7 @@ function jwt() {
             '/counter/createCounter',
             '/users/register',
             '/users/verify-email',
+            '/users/verify-phone',
             '/users/forgot-password',
             '/users/reset-password',
             '/users/resend-verify-email',
