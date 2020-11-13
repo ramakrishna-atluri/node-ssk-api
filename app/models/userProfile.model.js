@@ -44,7 +44,9 @@ const schema = new Schema({
     annualIncome: { type: String, required: false },
   },
   lifeStyleInfo:{
-    diet: {type: String, required: false}
+    eatingHabits: {type: String, required: false},
+    smokingHabits: {type: String, required: false},
+    drinkingHabits: {type: String, required: false}
   },
   locationInfo:{
     country: {type: String, required: false},
@@ -52,7 +54,7 @@ const schema = new Schema({
     city: {type: String, required: false}
   },
   contactInfo:{
-    countryCode: {type: String, require: false},
+    countryCode: {type: String, required: false},
     contactNumber: {type: String, required: false},
     phoneVerified: {type: Boolean, required: false, default: false},
   }

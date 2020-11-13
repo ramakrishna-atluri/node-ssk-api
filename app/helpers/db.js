@@ -9,6 +9,7 @@ module.exports = {
     Counter: require('../models/counter.model'),
     UserProfile: require('../models/userProfile.model'),
     UserRole: require('../models/userRole.model'),
+    UserPreferences: require('../models/userPreferences.model'),
     RefreshToken: require('../models/refreshToken.model'),
     isValidId
 };
