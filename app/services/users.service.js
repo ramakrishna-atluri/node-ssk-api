@@ -6,7 +6,6 @@ const db = require('../helpers/db');
 const counterService = require('./counter.service');
 const sendEmail = require('../helpers/send-email');
 const { sendOTP, verifyOTP} = require('../helpers/verify-phone');
-const { UserProfile } = require('../helpers/db');
 const User = db.User;
 const UserProfile = db.UserProfile;
 const UserPreferences= db.UserPreferences;
@@ -125,18 +124,10 @@ async function revokeToken({ token, ipAddress }) {
     await refreshToken.save();
 }
 
-async function sendVerificationEmail(email) {
-    let message;
-
-    if (origin) {
-        const verifyUrl = `${origin}/users/verify-email?token=${user.verificationToken}`;
-        message = `<p>Please click the below link to verify your email address:</p>
-                   <p><a href="${verifyUrl}">${verifyUrl}</a></p>`;
-    } else {
-        message = `<p>Please use the below token to verify your email address with the <code>/user/verify-email</code> api route:</p>
-                   <p><code>${user.verificationToken}</code></p>`;
-    }
-
+async function sendVerificationEmail(user) {
+    let message = `<p>Please use the below token to verify your email address.
+                <p><code>${user.verificationToken}</code></p>`;
+    
     await sendEmail({
         to: user.email,
         subject: 'SSK Matrimonial - Verify Email',
@@ -178,7 +169,7 @@ async function getUserSequenceNumber(userParam) {
     return user.userId;
 }
 
-async function createUser(userParam, origin) {
+async function createUser(userParam) {
     // validate
     if (await User.findOne({ email: userParam.email })) {
         throw 'email "' + userParam.email + '" is already taken';
@@ -202,7 +193,7 @@ async function createUser(userParam, origin) {
     await user.save();
 
     // send email
-    await sendVerificationEmail(user, origin);
+    await sendVerificationEmail(user);
 }
 
 async function update(id, userParam) {
@@ -262,7 +253,7 @@ async function verifyPhone({ phoneNumber, sessionId, userId, action, otpCode }) 
     }
 }
 
-async function forgotPassword({ email }, origin) {
+async function forgotPassword({ email }) {
     const user = await User.findOne({ email });
 
     // always return ok response to prevent email enumeration
@@ -276,19 +267,12 @@ async function forgotPassword({ email }, origin) {
     await user.save();
 
     // send email
-    await sendPasswordResetEmail(user, origin);
+    await sendPasswordResetEmail(user);
 }
 
-async function sendPasswordResetEmail(user, origin) {
-    let message;
-    if (origin) {
-        const resetUrl = `${origin}/users/reset-password?token=${user.resetToken.token}`;
-        message = `<p>Please click the below link to reset your password, the link will be valid for 1 day:</p>
-                   <p><a href="${resetUrl}">${resetUrl}</a></p>`;
-    } else {
-        message = `<p>Please use the below token to reset your password with the <code>/users/reset-password</code> api route:</p>
+async function sendPasswordResetEmail(user) {
+    let message = `<p>Please use the below token to reset your password.
                    <p><code>${user.resetToken.token}</code></p>`;
-    }
 
     await sendEmail({
         to: user.email,
@@ -320,7 +304,6 @@ async function resetPassword({ token, password }) {
 async function sendResetPasswordConfirmEmail(user) {
     let message;
     if (user) {
-       //const resetUrl = `${origin}/users/reset-password?token=${user.resetToken.token}`;
         message = `<p>Your password has been succesfully reset, please login.</p>`;
     }
 
