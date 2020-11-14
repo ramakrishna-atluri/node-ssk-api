@@ -3,8 +3,8 @@ const router = express.Router();
 const userProfileService = require('../services/userProfile.service');
 
 // routes
-router.post('/authenticate', authenticate);
 router.post('/createProfile', createProfile);
+router.post('/updateProfile', updateProfile);
 router.get('/', getAll);
 router.get('/current', getCurrent);
 router.get('/:id', getById);
@@ -13,14 +13,14 @@ router.delete('/:id', _delete);
 
 module.exports = router;
 
-function authenticate(req, res, next) {
-    userProfileService.authenticate(req.body)
-        .then(user => user ? res.json(user) : res.status(400).json({ message: 'email or password is incorrect' }))
+function createProfile(req, res, next) {
+    userProfileService.createProfile(req.body)
+        .then(() => res.json({}))
         .catch(err => next(err));
 }
 
-function createProfile(req, res, next) {
-    userProfileService.createProfile(req.body)
+function updateProfile(req, res, next) {
+    userProfileService.updateProfile(req.body)
         .then(() => res.json({}))
         .catch(err => next(err));
 }

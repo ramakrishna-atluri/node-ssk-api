@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const schema = new Schema({
-  userProfileId :{type: String, required: false},
   userId :{type: String, required: false},
   basicInfo:{
     firstName: { type: String, required: false },
@@ -54,7 +53,6 @@ const schema = new Schema({
     city: {type: String, required: false}
   },
   contactInfo:{
-    countryCode: {type: String, required: false},
     contactNumber: {type: String, required: false},
     phoneVerified: {type: Boolean, required: false, default: false},
   }
