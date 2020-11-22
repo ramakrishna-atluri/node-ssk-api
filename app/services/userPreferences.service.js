@@ -10,7 +10,7 @@ module.exports = {
     getById,
     createPreference,
     getPreferences,
-    update,
+    updatePreference,
     delete: _delete
 };
 
@@ -44,23 +44,14 @@ async function getPreferences(preferenceParam) {
     return await UserPreferences.find({ email: preferenceParam.userId });
 }
 
-async function update(id, preferenceParam) {
-    const user = await User.findById(id);
+async function updatePreference(preferenceParam) {
+    const userPreferenceParams = await UserPreferences.findOne({ userId: preferenceParam.userId });
 
-    // validate
-    if (!user) throw 'User not found';
-    if (user.email !== preferenceParam.email && await User.findOne({ email: preferenceParam.email })) {
-        throw 'email "' + preferenceParam.email + '" is already taken';
-    }
-
-    // hash password if it was entered
-    if (preferenceParam.password) {
-        preferenceParam.hash = bcrypt.hashSync(preferenceParam.password, 10);
-    }
-
-    // copy preferenceParam properties to user
-    Object.assign(user, preferenceParam);
-    await user.save();
+    if (!userPreferenceParams) throw 'User Preferences not found';
+    
+    // copy profileParam properties to user profile
+    Object.assign(userPreferenceParams, preferenceParam);
+    await userPreferenceParams.save();
 }
 
 

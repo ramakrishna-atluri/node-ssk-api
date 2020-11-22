@@ -20,7 +20,7 @@ const schema = new Schema({
     familyValues: { type: String, required: false },
   },
   educationAndCareerInfo:{
-    highestQualification: { type: String, required: false },
+    highestQualification: { type: Array, required: false },
     workingWith: { type: String, required: false },
     workingAs: { type: String, required: false },
   },
