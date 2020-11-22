@@ -5,6 +5,7 @@ const userPreferencesService = require('../services/userPreferences.service');
 // routes
 router.post('/authenticate', authenticate);
 router.post('/createPreference', createPreference);
+router.post('/updatePreference', updatePreference);
 router.get('/', getAll);
 router.get('/current', getCurrent);
 router.get('/:id', getById);
@@ -21,6 +22,12 @@ function authenticate(req, res, next) {
 
 function createPreference(req, res, next) {
     userPreferencesService.createPreference(req.body)
+        .then(() => res.json({}))
+        .catch(err => next(err));
+}
+
+function updatePreference(req, res, next) {
+    userPreferencesService.updatePreference(req.body)
         .then(() => res.json({}))
         .catch(err => next(err));
 }

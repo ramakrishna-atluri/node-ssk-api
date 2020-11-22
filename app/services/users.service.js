@@ -46,11 +46,26 @@ async function authenticate({ email, password, ipAddress }) {
           userDetailParams.tokenDetails = tokenDetails(jwtToken, refreshToken.token);
     const userProfileParams = await UserProfile.findOne({userId : user.userId});
     const userPreferenceParams = await UserPreferences.findOne({userId : user.userId});
+    let matchObj = [];
+    if(userPreferenceParams){
+        let matchList = [];
+          matchList.push(await UserProfile.find({$and:[ {"lifeStyleInfo.smokingHabits" : userPreferenceParams.lifeStyleInfo.smokingHabits}, {"lifeStyleInfo.drinkingHabits" : userPreferenceParams.lifeStyleInfo.smokingHabits}]}).where('userId').ne(user.userId));
 
+            
+            for(var i=0;i<matchList.length;i++){
+                for(var j=0;j<matchList[i].length;j++){
+                    matchObj.push(matchList[i][j]); 
+                }
+            }
+            matchObj = matchObj.filter((elem, index, self) => self.findIndex(
+                (t) => {return (t.userId === elem.userId)}) === index);
+    }
+    
     let body = {
         userDetails : userDetailParams,
         userProfile : userProfileParams,
-        userPreferences : userPreferenceParams
+        userPreferences : userPreferenceParams,
+        matchList: matchObj
     }
 
     return body;

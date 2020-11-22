@@ -20,6 +20,7 @@ function jwt() {
             '/users/reset-password',
             '/users/resend-verify-email',
             '/preferences/createPreference',
+            '/preferences/updatePreference',
         ]
     });
 }
