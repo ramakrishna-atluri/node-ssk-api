@@ -22,7 +22,15 @@ module.exports = router;
 
 function authenticate(req, res, next) {
     userService.authenticate(req.body)
-        .then(user => user ? res.json(user) : res.status(401).json({ message: 'email or password is incorrect' }))
+        .then(user => {
+            if(user) {
+                setTokenCookie(res, user.userDetails.tokenDetails.refreshToken);
+                res.json(user)
+            }
+            else {
+                res.status(401).json({ message: 'email or password is incorrect' })
+            }
+        })
         .catch(err => next(err));
 }
 
@@ -40,8 +48,11 @@ function verifyEmail(req, res, next) {
 
 function verifyPhone(req, res, next) {
     userService.verifyPhone(req.body)
-    .then(response => response === "failure" ? res.status(500).json({ message: 'failed' }) : res.json({ message: 'success' }))
-        .catch(next);
+    .then(response => {
+        const resp = JSON.parse(response);
+        (response === "failure") ? res.status(500).json({ message: 'verification failed' }) : (resp.Status === "Error" ? res.status(500).json({ message: resp.Details }) :  res.json({ message: resp.Details }));
+    })
+    .catch(next);
 }
 
 function resendVerifyEmail(req, res, next) {
@@ -90,4 +101,18 @@ function _delete(req, res, next) {
     userService.delete(req.params.id)
         .then(() => res.json({}))
         .catch(err => next(err));
+}
+
+// helper functions
+
+function setTokenCookie(res, token)
+{
+    // create cookie with refresh token that expires in 7 days
+    const cookieOptions = {
+        httpOnly: true,
+        expires: new Date(Date.now() + 7*24*60*60*1000)
+    };
+    res.cookie('refreshToken', token, cookieOptions);
+    res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
+    res.header('Access-Control-Allow-Credentials','true');
 }
