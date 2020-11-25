@@ -1,7 +1,7 @@
 {
     "connectionString": "mongodb+srv://dm_dev:1Q2w3e4r@cluster0.vbprc.mongodb.net/ssk_matrimonial?retryWrites=true&w=majority",
     "secret": "martingale",
-    "verifyPhoneAPIKEY": "d07484dd-254f-11eb-83d4-0200cd936042",
+    "verifyPhoneAPIKEY": "8e7a39f7-2edd-11eb-83d4-0200cd936042",
     "emailFrom": "sskmatrimonial01@gmail.com",
     "smtpOptions": {
         "host": "smtp.gmail.com",
