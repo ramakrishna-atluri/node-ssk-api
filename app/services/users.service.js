@@ -245,7 +245,7 @@ async function verifyEmail({ token }) {
     return 'success'
 }
 
-async function verifyPhone({ phoneNumber, sessionId, userId, action, otpCode }) {
+async function verifyPhone({ sessionId, userId, action, otpCode }) {
 
     if(action === null) return 'failure';
 
@@ -254,12 +254,12 @@ async function verifyPhone({ phoneNumber, sessionId, userId, action, otpCode }) 
 
     if(action === 'sendOTP')
     {
-        return sendOTP(phoneNumber)
+        return sendOTP(userProfile.contactInfo.phoneNumber)
     }
     else {
         const verifyOPTResponse = verifyOTP(otpCode, sessionId);
 
-        if(verifyOPTResponse.Status && verifyOPTResponse.Details === 'OTP Matched'){
+        if(verifyOPTResponse.Status === 'Success' && verifyOPTResponse.Details === 'OTP Matched'){
             userProfile.contactInfo.phoneVerified = true;
             await userProfile.save();
         }
