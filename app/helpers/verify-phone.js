@@ -9,13 +9,18 @@ async function sendOTP(phoneNumber) {
       url: 'http://2factor.in/API/V1/'+ config.verifyPhoneAPIKEY +'/SMS/'+ phoneNumber +'/AUTOGEN',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       form: {} };
-    
-    request(options, function (error, response, body) {
-      if (error) return error;
-    
-      console.log(body);
-      return body;
-    });
+      
+      // Return new promise
+      return new Promise(function(resolve, reject) {
+        // Do async job
+        request.get(options, function(err, resp, body) {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(body);
+          }
+        })
+      })
 }
 
 async function verifyOTP(otpCode, sessionId ) {
@@ -25,10 +30,15 @@ async function verifyOTP(otpCode, sessionId ) {
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       form: {} };
     
-    request(options, function (error, response, body) {
-      if (error) return error;
-    
-      console.log(body);
-      return body;
-    });
+    // Return new promise
+    return new Promise(function(resolve, reject) {
+      // Do async job
+      request.get(options, function(err, resp, body) {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(body);
+        }
+      })
+    })
 }

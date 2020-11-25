@@ -6,6 +6,7 @@ const db = require('../helpers/db');
 const counterService = require('./counter.service');
 const sendEmail = require('../helpers/send-email');
 const { sendOTP, verifyOTP} = require('../helpers/verify-phone');
+const { response } = require('express');
 const User = db.User;
 const UserProfile = db.UserProfile;
 const UserPreferences= db.UserPreferences;
@@ -39,9 +40,9 @@ async function authenticate({ email, password, ipAddress }) {
     const jwtToken = generateJwtToken(user);
     const refreshToken = generateRefreshToken(user, ipAddress);
 
-
     // save refresh token
     await refreshToken.save();
+
     const userDetailParams = basicDetails(user);
           userDetailParams.tokenDetails = tokenDetails(jwtToken, refreshToken.token);
     const userProfileParams = await UserProfile.findOne({userId : user.userId});
@@ -107,7 +108,7 @@ function tokenDetails(jwtToken, newRefreshToken) {
 
 function generateJwtToken(user) {
     // create a jwt token containing the user id that expires in 15 minutes
-    return jwt.sign({ email: user.email, password: user.password }, config.secret, { expiresIn: '15m' });
+    return jwt.sign({ email: user.email }, config.secret, { expiresIn: '15m' });
 }
 
 function generateRefreshToken(user, ipAddress) {
@@ -121,7 +122,7 @@ function generateRefreshToken(user, ipAddress) {
 }
 
 function randomTokenString() {
-    return crypto.randomBytes(10).toString('hex');
+    return crypto.randomBytes(40).toString('hex');
 }
 
 async function getRefreshToken(token) {
@@ -248,20 +249,22 @@ async function verifyPhone({ phoneNumber, sessionId, userId, action, otpCode }) 
 
     if(action === null) return 'failure';
 
+    const userProfile = await UserProfile.findOne({ userId: userId });
+    if (!userProfile) return 'failure';
+
     if(action === 'sendOTP')
     {
-        return sendOTP(phoneNumber);
+        return sendOTP(phoneNumber)
     }
     else {
         const verifyOPTResponse = verifyOTP(otpCode, sessionId);
 
         if(verifyOPTResponse.Status && verifyOPTResponse.Details === 'OTP Matched'){
-            const userProfile = await UserProfile.findOne({ userId: userId });
-
-            if (!userProfile) return 'failure';
-
             userProfile.contactInfo.phoneVerified = true;
             await userProfile.save();
+        }
+        else {
+            return 'failure';
         }
 
         return verifyOPTResponse;
