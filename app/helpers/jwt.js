@@ -6,25 +6,12 @@ module.exports = jwt;
 
 function jwt() {
     const secret = config.secret;
-    return expressJwt({ secret, algorithms: ['HS256'], isRevoked }).unless({
+    return expressJwt({ secret, algorithms: ['HS256'] }).unless({
         path: [
             // public routes that don't require authentication
             '/users/authenticate',
-            '/profile/createProfile',
-            '/profile/updateProfile',
-            '/profile/block-profile',
-            '/profile/unblock-profile',
-            '/counter/createCounter',
             '/users/register',
-            '/users/verify-email',
-            '/users/verify-phone',
-            '/users/forgot-password',
-            '/users/reset-password',
-            '/users/change-password',
-            '/users/deactivateAccount',
-            '/users/resend-verify-email',
-            '/preferences/createPreference',
-            '/preferences/updatePreference',
+            '/users/refreshToken'
         ]
     });
 }

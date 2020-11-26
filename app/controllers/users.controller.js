@@ -2,10 +2,13 @@ const { request } = require('express');
 const express = require('express');
 const router = express.Router();
 const userService = require('../services/users.service');
+const jwt = require('jsonwebtoken');
+const config = require('../config.json');
 
 // routes
 router.post('/authenticate', authenticate);
 router.post('/register', register);
+router.post('/getUser', getUser);
 router.get('/', getAll);
 router.get('/current', getCurrent);
 router.get('/:id', getById);
@@ -18,6 +21,8 @@ router.post('/reset-password', resetPassword);
 router.post('/change-password', changePassword);
 router.post('/deactivateAccount', deactivateAccount);
 router.post('/resend-verify-email', resendVerifyEmail);
+router.post('/refreshToken', refreshToken);
+router.post('/logout',logout);
 
 
 module.exports = router;
@@ -27,6 +32,8 @@ function authenticate(req, res, next) {
         .then(user => {
             if(user) {
                 setTokenCookie(res, user.userDetails.tokenDetails.refreshToken);
+                const tokenDetails = user.userDetails.tokenDetails.accessToken;
+                user.userDetails.tokenDetails = { accessToken: tokenDetails };
                 res.json(user)
             }
             else {
@@ -42,6 +49,18 @@ function register(req, res, next) {
         .catch(err => next(err));
 }
 
+function logout(req, res, next) {
+    userService.logout(req.body)
+    .then(response => response === "failure" ? res.status(500).json({ message: 'logout failed' }) : res.json({ message: 'logout success' }))
+    .catch(next);
+}
+
+function getUser(req, res, next) {
+    userService.getUser(req.body)
+    .then((user) => res.json(user))
+    .catch(err => next(err));
+}
+
 function verifyEmail(req, res, next) {
     userService.verifyEmail(req.body)
     .then(response => response === "failure" ? res.status(500).json({ message: 'verification failed' }) : res.json({ message: 'verification success' }))
@@ -52,7 +71,7 @@ function verifyPhone(req, res, next) {
     userService.verifyPhone(req.body)
     .then(response => {
         const resp = JSON.parse(response);
-        (response === "failure") ? res.status(500).json({ message: 'verification failed' }) : (resp.Status === "Error" ? res.status(500).json({ message: resp.Details }) :  res.json({ message: resp.Details }));
+        (response === "failure") ? res.status(500).json({ message: 'verification failed' }) : (resp.Status === "Error" ? res.status(500).json({ message: response }) :  res.json({ message: response }));
     })
     .catch(next);
 }
@@ -118,6 +137,22 @@ function _delete(req, res, next) {
         .catch(err => next(err));
 }
 
+function refreshToken(req, res, next) {
+    userService.refreshToken(req.body)
+        .then(user => {
+            if(user) {
+                setTokenCookie(res, user.userDetails.tokenDetails.refreshToken);
+                const tokenDetails = user.userDetails.tokenDetails.accessToken;
+                user.userDetails.tokenDetails = { accessToken: tokenDetails };
+                res.json(user)
+            }
+            else {
+                res.status(401).json({ message: 'Email or password is incorrect' })
+            }
+        })
+        .catch(err => next(err));
+}
+
 // helper functions
 
 function setTokenCookie(res, token)
@@ -128,6 +163,26 @@ function setTokenCookie(res, token)
         expires: new Date(Date.now() + 7*24*60*60*1000)
     };
     res.cookie('refreshToken', token, cookieOptions);
-    res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
-    res.header('Access-Control-Allow-Credentials','true');
+    // res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
+    // res.header('Access-Control-Allow-Credentials','true');
 }
+
+function authenticateJWT (req, res, next) {
+    const authHeader = req.headers.authorization;
+
+    if (authHeader) {
+        const token = authHeader.split(' ')[1];
+
+        jwt.verify(token, config.secret, (err, user) => {
+            console.log(err);
+            if (err) {
+                return res.sendStatus(403);
+            }
+
+            req.user = user;
+            next();
+        });
+    } else {
+        res.sendStatus(401);
+    }
+};
