@@ -26,7 +26,9 @@ module.exports = {
     verifyPhone,
     forgotPassword,
     resetPassword,
-    resendVerificationEmail
+    resendVerificationEmail,
+    changePassword,
+    deactivateAccount
 };
 
 async function authenticate({ email, password, ipAddress }) {
@@ -288,6 +290,19 @@ async function forgotPassword({ email }) {
     await sendPasswordResetEmail(user);
 }
 
+async function changePassword({ userId, currPassword, newPassword }) {
+    const user = await User.findOne({ userId: userId });
+    if (!bcrypt.compareSync(currPassword, user.hash)) {
+        throw 'password is incorrect';
+    }
+    // create reset token that expires after 24 hours
+    user.hash = bcrypt.hashSync(newPassword,10);
+    await user.save();
+
+    await sendResetPasswordConfirmEmail(user);
+    
+}
+
 async function sendPasswordResetEmail(user) {
     let message = `<p>Please use the below token to reset your password.
                    <p><code>${user.resetToken.token}</code></p>`;
@@ -346,6 +361,34 @@ async function updateCounter(sequenceName) {
 
     return seqValue.sequence_value;
     //return await Counter.find({counterId: sequenceName});
+}
+
+async function deactivateAccount(idParam) {
+    const user = await User.findOne({ userId: idParam.userId});
+
+    if (!user) return 'failure';
+
+    // update isActive
+    user.isActive = false;
+    await user.save();
+
+    await sendDeactivateConfirmEmail(user);
+}
+
+async function sendDeactivateConfirmEmail(user) {
+    let message;
+    if (user) {
+        message = `<p>Your Account has been Deactivated and will be not available to others. Please login to activate again.</p>`;
+    }
+
+    await sendEmail({
+        to: user.email,
+        subject: 'Account Deactivation - SSK Matrimonial',
+        html: `<h4>Account Deactivation Email:</h4>
+               ${message}`
+    });
+
+    return "Success";
 }
 
 async function _delete(id) {
