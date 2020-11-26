@@ -14,6 +14,8 @@ const RefreshToken = db.RefreshToken;
 
 module.exports = {
     authenticate,
+    getUser,
+    logout,
     getAll,
     getById,
     createUser,
@@ -40,13 +42,32 @@ async function authenticate({ email, password, ipAddress }) {
 
     // authentication successful so generate jwt and refresh tokens
     const jwtToken = generateJwtToken(user);
-    const refreshToken = generateRefreshToken(user, ipAddress);
+    const refreshToken = generateRefreshToken(user.userId, ipAddress);
 
+    if(!user.isActive) {
+        user.isActive = true;
+
+        await user.save();
+
+        sendAccountActivationEmail(user);
+    }
+        
     // save refresh token
     await refreshToken.save();
 
     const userDetailParams = basicDetails(user);
-          userDetailParams.tokenDetails = tokenDetails(jwtToken, refreshToken.token);
+    userDetailParams.tokenDetails = tokenDetails(jwtToken, refreshToken.token);
+
+    let body = {
+        userDetails : userDetailParams
+    }
+
+    return body;
+}
+
+async function getUser({ userId }) {
+    const user = await User.findOne({ userId });
+   
     const userProfileParams = await UserProfile.findOne({userId : user.userId});
     const userPreferenceParams = await UserPreferences.findOne({userId : user.userId});
     let matchObj = [];
@@ -65,7 +86,6 @@ async function authenticate({ email, password, ipAddress }) {
     }
     
     let body = {
-        userDetails : userDetailParams,
         userProfile : userProfileParams,
         userPreferences : userPreferenceParams,
         matchList: matchObj
@@ -74,12 +94,21 @@ async function authenticate({ email, password, ipAddress }) {
     return body;
 }
 
-async function refreshToken({ token, ipAddress }) {
+async function logout({userId}){
+    console.log(userId);
+    await RefreshToken.deleteMany({userId: userId}), function (err) {
+        if(err) return 'failure';
+        
+        return 'success';
+    }
+}
+
+async function refreshToken({ userId, token, ipAddress }) {
     const refreshToken = await getRefreshToken(token);
-    const { user } = refreshToken;
+    const user = await User.findOne({ userId });
 
     // replace old refresh token with a new one and save
-    const newRefreshToken = generateRefreshToken(user, ipAddress);
+    const newRefreshToken = generateRefreshToken(userId, ipAddress);
     refreshToken.revoked = Date.now();
     refreshToken.revokedByIp = ipAddress;
     refreshToken.replacedByToken = newRefreshToken.token;
@@ -89,11 +118,14 @@ async function refreshToken({ token, ipAddress }) {
     // generate new jwt
     const jwtToken = generateJwtToken(user);
 
-    // return basic details and tokens
-    return {
-        ...basicDetails(user),
-        ...tokenDetails(jwtToken, newRefreshToken.token)
-    };
+    const userDetailParams = basicDetails(user);
+    userDetailParams.tokenDetails = tokenDetails(jwtToken, newRefreshToken.token);
+
+    let body = {
+        userDetails : userDetailParams
+    }
+
+    return body;
 }
 
 function basicDetails(user) {
@@ -113,10 +145,10 @@ function generateJwtToken(user) {
     return jwt.sign({ email: user.email }, config.secret, { expiresIn: '15m' });
 }
 
-function generateRefreshToken(user, ipAddress) {
+function generateRefreshToken(userId, ipAddress) {
     // create a refresh token that expires in 7 days
     return new RefreshToken({
-        user: user.id,
+        userId: userId,
         token: randomTokenString(),
         expires: new Date(Date.now() + 7*24*60*60*1000),
         createdByIp: ipAddress
@@ -128,7 +160,7 @@ function randomTokenString() {
 }
 
 async function getRefreshToken(token) {
-    const refreshToken = await RefreshToken.findOne({ token }).populate('user');
+    const refreshToken = await RefreshToken.findOne({ token });
     if (!refreshToken || !refreshToken.isActive) throw 'Invalid token';
     return refreshToken;
 }
@@ -140,6 +172,18 @@ async function revokeToken({ token, ipAddress }) {
     refreshToken.revoked = Date.now();
     refreshToken.revokedByIp = ipAddress;
     await refreshToken.save();
+}
+
+async function sendAccountActivationEmail(user) {
+    let message = `<p>Your account with this email has been re-activated due to login`;
+    
+    await sendEmail({
+        to: user.email,
+        subject: 'SSK Matrimonial - Account Activation Email',
+        html: `<h4>Account Activation Email</h4>
+               <p>Welcome back!!</p>
+               ${message}`
+    });
 }
 
 async function sendVerificationEmail(user) {
