@@ -11,6 +11,8 @@ module.exports = {
     getById,
     createProfile,
     updateProfile,
+    blockProfile,
+    unBlockProfile,
     getProfile,
     delete: _delete
 };
@@ -41,6 +43,43 @@ async function updateProfile(profileParam) {
     // copy profileParam properties to user profile
     Object.assign(userProfile, profileParam);
     await userProfile.save();
+}
+
+async function blockProfile(blockParam) {
+    const userProfile = await UserProfile.findOne({ userId: blockParam.userId });
+    const blockedProfile = await UserProfile.findOne({ userId: blockParam.blockId });
+    // validate
+    if (!blockedProfile) return 'Profile not found';
+    
+    if(userProfile.blockedProfiles.length > 0){
+        for(var i=0;i<userProfile.blockedProfiles.length;i++){
+            if( blockParam.blockId === userProfile.blockedProfiles[i].blockedId){
+                return 'User already blocked';
+            }else{
+                userProfile.blockedProfiles.push({blockedId: blockParam.blockId, firstName: blockedProfile.basicInfo.firstName, lastName: blockedProfile.basicInfo.lastName});
+                await userProfile.save();
+                return userProfile;
+            }
+        }
+    }else{
+        userProfile.blockedProfiles.push({blockedId: blockParam.blockId, firstName: blockedProfile.basicInfo.firstName, lastName: blockedProfile.basicInfo.lastName});
+        await userProfile.save();
+        return userProfile;
+    }
+    
+}
+
+async function unBlockProfile(unBlockParam) {
+    console.log(unBlockParam);
+    const userProfile = await UserProfile.findOne({ userId: unBlockParam.userId });
+    for(var i=0;i<userProfile.blockedProfiles.length;i++){
+        if(unBlockParam.unBlockId ===  userProfile.blockedProfiles[i].blockedId){
+            userProfile.blockedProfiles.splice(i,1);
+            await userProfile.save();
+            return userProfile;
+        }
+    }
+    
 }
 
 async function getAll() {

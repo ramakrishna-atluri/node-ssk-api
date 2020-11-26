@@ -15,6 +15,8 @@ router.post('/verify-email', verifyEmail);
 router.post('/verify-phone', verifyPhone);
 router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
+router.post('/change-password', changePassword);
+router.post('/deactivateAccount', deactivateAccount);
 router.post('/resend-verify-email', resendVerifyEmail);
 
 
@@ -73,6 +75,18 @@ function resetPassword(req, res, next) {
         .catch(next);
 }
 
+function changePassword(req, res, next) {
+    userService.changePassword(req.body)
+        .then(response => response === "failure" ? res.status(401).json({ message: 'Current password is incorrect' }) : res.json({ message: 'change password successful, you can now login' }))
+        .catch(next);
+}
+
+function deactivateAccount(req, res, next) {
+    userService.deactivateAccount(req.body)
+        .then(() => res.json({}))
+        .catch(err => next(err));
+}
+
 function getAll(req, res, next) {
     userService.getAll()
         .then(users => res.json(users))
@@ -90,6 +104,7 @@ function getById(req, res, next) {
         .then(user => user ? res.json(user) : res.sendStatus(404))
         .catch(err => next(err));
 }
+
 
 function update(req, res, next) {
     userService.update(req.params.id, req.body)

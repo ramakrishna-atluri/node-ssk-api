@@ -5,6 +5,8 @@ const userProfileService = require('../services/userProfile.service');
 // routes
 router.post('/createProfile', createProfile);
 router.post('/updateProfile', updateProfile);
+router.post('/block-profile', blockProfile);
+router.post('/unblock-profile', unBlockProfile);
 router.get('/', getAll);
 router.get('/current', getCurrent);
 router.get('/:id', getById);
@@ -23,6 +25,32 @@ function updateProfile(req, res, next) {
     userProfileService.updateProfile(req.body)
         .then(() => res.json({}))
         .catch(err => next(err));
+}
+
+function blockProfile(req, res, next) {
+    userProfileService.blockProfile(req.body)
+    .then(userProfile => {
+        if(userProfile) {
+            res.json(userProfile)
+        }
+        else {
+            res.status(401).json({ message: 'invalid Profile Id' })
+        }
+    })
+    .catch(err => next(err));
+}
+
+function unBlockProfile(req, res, next) {
+    userProfileService.unBlockProfile(req.body)
+    .then(userProfile => {
+        if(userProfile) {
+            res.json(userProfile)
+        }
+        else {
+            res.status(401).json({ message: 'invalid Profile Id' })
+        }
+    })
+    .catch(err => next(err));
 }
 
 function getAll(req, res, next) {
