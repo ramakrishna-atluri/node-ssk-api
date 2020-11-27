@@ -20,6 +20,12 @@ module.exports = {
 async function createProfile(profileParam) {
     //validate
 
+    let contactNumber = profileParam.contactInfo.contactNumber;
+
+    if(contactNumber) {
+        const maskedContactNumber = contactNumberstr.substring(0, 1) + contactNumberstr.substring(1).replace(/\d(?=\d{4})/g, "*");
+        profileParam.contactInfo.maskedContactNumber = maskedContactNumber;
+    }
     const profile = new UserProfile(profileParam);
     const user = await User.findOne({ userId: profileParam.userId });
     
@@ -58,24 +64,26 @@ async function blockProfile(blockParam) {
             }else{
                 userProfile.blockedProfiles.push({blockedId: blockParam.blockId, firstName: blockedProfile.basicInfo.firstName, lastName: blockedProfile.basicInfo.lastName});
                 await userProfile.save();
+                userProfile.contactInfo.contactNumber = userProfile.contactInfo.maskedContactNumber;
                 return userProfile;
             }
         }
     }else{
         userProfile.blockedProfiles.push({blockedId: blockParam.blockId, firstName: blockedProfile.basicInfo.firstName, lastName: blockedProfile.basicInfo.lastName});
         await userProfile.save();
+        userProfile.contactInfo.contactNumber = userProfile.contactInfo.maskedContactNumber;
         return userProfile;
     }
     
 }
 
 async function unBlockProfile(unBlockParam) {
-    console.log(unBlockParam);
     const userProfile = await UserProfile.findOne({ userId: unBlockParam.userId });
     for(var i=0;i<userProfile.blockedProfiles.length;i++){
         if(unBlockParam.unBlockId ===  userProfile.blockedProfiles[i].blockedId){
             userProfile.blockedProfiles.splice(i,1);
             await userProfile.save();
+            userProfile.contactInfo.contactNumber = userProfile.contactInfo.maskedContactNumber;
             return userProfile;
         }
     }

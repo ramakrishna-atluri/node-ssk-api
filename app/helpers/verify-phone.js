@@ -33,7 +33,6 @@ async function verifyOTP(otpCode, sessionId ) {
     // Return new promise
     return new Promise(function(resolve, reject) {
       // Do async job
-      console.log(options)
       request.get(options, function(err, resp, body) {
         if (err) {
           reject(err);

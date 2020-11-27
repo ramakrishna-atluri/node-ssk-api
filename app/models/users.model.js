@@ -3,6 +3,7 @@ const Schema = mongoose.Schema;
 
 const schema = new Schema({
     email: { type: String, unique: true, required: true },
+    maskedEmail: { type: String, unique: true, required: true },
     hash: { type: String, required: true },
     userId: { type: String, required: false },
     isActive: { type: Boolean, required: false, default: true },

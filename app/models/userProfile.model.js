@@ -54,6 +54,7 @@ const schema = new Schema({
   },
   contactInfo:{
     contactNumber: {type: String, required: false},
+    maskedContactNumber: {type: String, required: false},
     phoneVerified: {type: Boolean, required: false, default: false},
   },
   blockedProfiles:{ type: Array, required: false}
