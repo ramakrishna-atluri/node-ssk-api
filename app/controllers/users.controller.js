@@ -20,6 +20,7 @@ router.post('/forgot-password', forgotPassword);
 router.post('/reset-password', resetPassword);
 router.post('/change-password', changePassword);
 router.post('/deactivateAccount', deactivateAccount);
+router.post('/deleteAccount', deleteAccount);
 router.post('/resend-verify-email', resendVerifyEmail);
 router.post('/refreshToken', refreshToken);
 router.post('/logout',logout);
@@ -110,8 +111,20 @@ function changePassword(req, res, next) {
 
 function deactivateAccount(req, res, next) {
     userService.deactivateAccount(req.body)
-        .then(() => res.json({}))
-        .catch(err => next(err));
+    .then(() => {
+        res.clearCookie("refreshToken");
+        res.json({})
+    })
+    .catch(err => next(err));
+}
+
+function deleteAccount(req, res, next) {
+    userService.deleteAccount(req.body)
+    .then(() => {
+        res.clearCookie("refreshToken");
+        res.json({})
+    })
+    .catch(err => next(err));
 }
 
 function getAll(req, res, next) {

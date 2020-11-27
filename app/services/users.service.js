@@ -30,7 +30,8 @@ module.exports = {
     resetPassword,
     resendVerificationEmail,
     changePassword,
-    deactivateAccount
+    deactivateAccount,
+    deleteAccount
 };
 
 async function authenticate({ email, password, ipAddress }) {
@@ -95,7 +96,6 @@ async function getUser({ userId }) {
 }
 
 async function logout({userId}){
-    console.log(userId);
     await RefreshToken.deleteMany({userId: userId}), function (err) {
         if(err) return 'failure';
         
@@ -429,6 +429,43 @@ async function sendDeactivateConfirmEmail(user) {
         to: user.email,
         subject: 'Account Deactivation - SSK Matrimonial',
         html: `<h4>Account Deactivation Email:</h4>
+               ${message}`
+    });
+
+    return "Success";
+}
+
+async function deleteAccount(idParam) {
+    const user = await User.findOne({ userId: idParam.userId});
+
+    if (!user) return 'failure';
+    
+    // update isActive
+    await UserPreferences.deleteOne({userId: idParam.userId}), function (err) {
+        if(err) return 'failure';
+        return 'success';
+    }
+    await UserProfile.deleteOne({userId: idParam.userId}), function (err) {
+        if(err) return 'failure';
+        return 'success';
+    }
+    await logout({userId: idParam.userId});
+
+    await sendDeleteConfirmEmail(user);
+
+    await User.deleteOne({userId: idParam.userId})
+}
+
+async function sendDeleteConfirmEmail(user) {
+    let message;
+    if (user) {
+        message =  `<p>We are just confirming your account has been deleted. If you'd like to join SSK Matrimonial again, please register at <a href="https://www.sskmatrimonail.com">SSK Matrmimonial</a> </p>` ;
+    }
+
+    await sendEmail({
+        to: user.email,
+        subject: 'Account Deletion - SSK Matrimonial',
+        html: `<h4>Account Deletion Email:</h4>
                ${message}`
     });
 
