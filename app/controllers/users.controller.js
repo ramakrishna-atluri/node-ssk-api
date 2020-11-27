@@ -105,7 +105,7 @@ function resetPassword(req, res, next) {
 
 function changePassword(req, res, next) {
     userService.changePassword(req.body)
-        .then(response => response === "failure" ? res.status(401).json({ message: 'Current password is incorrect' }) : res.json({ message: 'change password successful, you can now login' }))
+        .then(response => response === "failure" ? res.status(500).json({ message: 'Change password failed' }) : res.json({ message: 'Change password success' }))
         .catch(next);
 }
 

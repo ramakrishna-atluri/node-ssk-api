@@ -69,7 +69,9 @@ async function authenticate({ email, password, ipAddress }) {
 async function getUser({ userId }) {
     const user = await User.findOne({ userId });
    
-    const userProfileParams = await UserProfile.findOne({userId : user.userId});
+    let userProfileParams = await UserProfile.findOne({userId : user.userId});
+    if(userProfileParams)
+        userProfileParams.contactInfo.contactNumber = userProfileParams.contactInfo.maskedContactNumber;
     const userPreferenceParams = await UserPreferences.findOne({userId : user.userId});
     let matchObj = [];
     if(userPreferenceParams){
@@ -129,8 +131,8 @@ async function refreshToken({ userId, token, ipAddress }) {
 }
 
 function basicDetails(user) {
-    const { email, roleId, userId, isProfileComplete, profileCompletePercentage, createdBy, isActive,  isVerified } = user;
-    return { email, roleId, userId, isProfileComplete, profileCompletePercentage, createdBy, isActive,  isVerified };
+    const { maskedEmail, roleId, userId, isProfileComplete, profileCompletePercentage, createdBy, isActive,  isVerified } = user;
+    return { email: maskedEmail, roleId, userId, isProfileComplete, profileCompletePercentage, createdBy, isActive,  isVerified };
 }
 
 function tokenDetails(jwtToken, newRefreshToken) {
@@ -245,11 +247,12 @@ async function createUser(userParam) {
     }
     user.status = true;
     var counter = await counterService.updateCounter("userId");
-    user.userId = counter;
+    user.userId = 'SSK' + counter;
     user.roleId = 1;
     user.createdBy = !userParam.mediatorId ? user.userId : userParam.mediatorId;
     user.isTemporaryPassword = userParam.mediatorId ? true : false;
     user.verificationToken = randomTokenString();
+    user.maskedEmail = userParam.email.replace(/^(.)(.*)(.@.*)$/, (_, a, b, c) => a + '******' + c);
       
     // save user
     await user.save();
@@ -264,7 +267,7 @@ async function update(id, userParam) {
     // validate
     if (!user) throw 'User not found';
     if (user.email !== userParam.email && await User.findOne({ email: userParam.email })) {
-        throw 'email "' + userParam.email + '" is already taken';
+        throw 'Email "' + userParam.email + '" is already taken';
     }
 
     // hash password if it was entered
@@ -307,6 +310,7 @@ async function verifyPhone({ sessionId, userId, action, otpCode }) {
         if(verifyOTPResponse.Status === 'Success' && verifyOTPResponse.Details === 'OTP Matched'){
             
             userProfile.contactInfo.phoneVerified = true;
+            userProfile.percentageComplete += 5;
             await userProfile.save();
         }
         else {
@@ -337,7 +341,7 @@ async function forgotPassword({ email }) {
 async function changePassword({ userId, currPassword, newPassword }) {
     const user = await User.findOne({ userId: userId });
     if (!bcrypt.compareSync(currPassword, user.hash)) {
-        throw 'password is incorrect';
+        return 'failure';
     }
     // create reset token that expires after 24 hours
     user.hash = bcrypt.hashSync(newPassword,10);
