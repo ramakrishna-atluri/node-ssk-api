@@ -30,7 +30,7 @@ module.exports = router;
 function authenticate(req, res, next) {
     userService.authenticate(req.body)
         .then(user => {
-            if(user) {
+            if(user && user.userDetails) {
                 setTokenCookie(res, user.userDetails.tokenDetails.refreshToken);
                 const tokenDetails = user.userDetails.tokenDetails.accessToken;
                 user.userDetails.tokenDetails = { accessToken: tokenDetails };
@@ -51,7 +51,16 @@ function register(req, res, next) {
 
 function logout(req, res, next) {
     userService.logout(req.body)
-    .then(response => response === "failure" ? res.status(500).json({ message: 'logout failed' }) : res.json({ message: 'logout success' }))
+    .then(response => {
+        if(response === "failure")
+         {
+            res.clearCookie("refreshToken");
+            res.status(500).json({ message: 'logout failed' });
+         }  else {
+            res.clearCookie("refreshToken");
+            res.json({ message: 'logout success' });
+         } 
+    })
     .catch(next);
 }
 
@@ -70,8 +79,7 @@ function verifyEmail(req, res, next) {
 function verifyPhone(req, res, next) {
     userService.verifyPhone(req.body)
     .then(response => {
-        const resp = JSON.parse(response);
-        (response === "failure") ? res.status(500).json({ message: 'verification failed' }) : (resp.Status === "Error" ? res.status(500).json({ message: response }) :  res.json({ message: response }));
+        (response === "failure") ? res.status(500).json({ message: 'verification failed' }) : (response.Status === "Error" ? res.status(500).json({ message: response }) :  res.json({ message: response }));
     })
     .catch(next);
 }

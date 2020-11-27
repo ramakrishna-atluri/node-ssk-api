@@ -37,7 +37,7 @@ async function authenticate({ email, password, ipAddress }) {
 
     const user = await User.findOne({ email });
     if (!user || !bcrypt.compareSync(password, user.hash)) {
-        throw 'Email or password is incorrect';
+        return 'Email or password is incorrect';
     }
 
     // authentication successful so generate jwt and refresh tokens
@@ -300,12 +300,12 @@ async function verifyPhone({ sessionId, userId, action, otpCode }) {
 
     if(action === 'sendOTP')
     {
-        return sendOTP(userProfile.contactInfo.phoneNumber)
+        return sendOTP(userProfile.contactInfo.contactNumber)
     }
     else {
-        const verifyOPTResponse = verifyOTP(otpCode, sessionId);
-
-        if(verifyOPTResponse.Status === 'Success' && verifyOPTResponse.Details === 'OTP Matched'){
+        const verifyOTPResponse = JSON.parse(await verifyOTP(otpCode, sessionId));
+        if(verifyOTPResponse.Status === 'Success' && verifyOTPResponse.Details === 'OTP Matched'){
+            
             userProfile.contactInfo.phoneVerified = true;
             await userProfile.save();
         }
@@ -313,7 +313,7 @@ async function verifyPhone({ sessionId, userId, action, otpCode }) {
             return 'failure';
         }
 
-        return verifyOPTResponse;
+        return verifyOTPResponse;
     }
 }
 
