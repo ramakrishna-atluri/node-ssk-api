@@ -23,7 +23,7 @@ async function createProfile(profileParam) {
     let contactNumber = profileParam.contactInfo.contactNumber;
 
     if(contactNumber) {
-        const maskedContactNumber = contactNumber.substring(0, 1) + contactNumber.substring(1).replace(/\d(?=\d{4})/g, "*");
+        const maskedContactNumber = contactNumber.substr(0,contactNumber.indexOf(' ')) + contactNumber.substr(contactNumber.indexOf(' ')+1).replace(' ', '').replace(/\d(?=\d{4})/g, "*");
         profileParam.contactInfo.maskedContactNumber = maskedContactNumber;
 
     }
@@ -52,9 +52,12 @@ async function updateProfile(profileParam) {
     // validate
     if (!userProfile) throw 'User not found';
     
+    profileParam.contactInfo.contactNumber = userProfile.contactInfo.contactNumber;
     // copy profileParam properties to user profile
     Object.assign(userProfile, profileParam);
     await userProfile.save();
+
+    userProfile.contactInfo.contactNumber = userProfile.contactInfo.maskedContactNumber;
     return userProfile;
 }
 
