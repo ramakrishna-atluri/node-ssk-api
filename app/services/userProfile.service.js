@@ -23,16 +23,22 @@ async function createProfile(profileParam) {
     let contactNumber = profileParam.contactInfo.contactNumber;
 
     if(contactNumber) {
-        const maskedContactNumber = contactNumberstr.substring(0, 1) + contactNumberstr.substring(1).replace(/\d(?=\d{4})/g, "*");
+        const maskedContactNumber = contactNumber.substring(0, 1) + contactNumber.substring(1).replace(/\d(?=\d{4})/g, "*");
         profileParam.contactInfo.maskedContactNumber = maskedContactNumber;
+
     }
     const profile = new UserProfile(profileParam);
     const user = await User.findOne({ userId: profileParam.userId });
     
     // save profile
-    user.profileComepletePercentage += 80;
+    user.profileCompletePercentage += 80;
+    if(user.profileCompletePercentage === 100){
+        user.isProfileComplete = true;
+    }
     await user.save();
     await profile.save();
+    profile.contactInfo.contactNumber = profile.contactInfo.maskedContactNumber;
+    return profile;
 }
 
 async function getProfile(profileParam) {
@@ -49,6 +55,7 @@ async function updateProfile(profileParam) {
     // copy profileParam properties to user profile
     Object.assign(userProfile, profileParam);
     await userProfile.save();
+    return userProfile;
 }
 
 async function blockProfile(blockParam) {

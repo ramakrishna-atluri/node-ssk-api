@@ -17,13 +17,13 @@ module.exports = router;
 
 function createProfile(req, res, next) {
     userProfileService.createProfile(req.body)
-        .then(() => res.json({}))
+        .then((userProfile) => res.json(userProfile))
         .catch(err => next(err));
 }
 
 function updateProfile(req, res, next) {
     userProfileService.updateProfile(req.body)
-        .then(() => res.json({}))
+        .then((userProfile) => res.json(userProfile))
         .catch(err => next(err));
 }
 
