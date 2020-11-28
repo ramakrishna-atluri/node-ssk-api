@@ -161,6 +161,13 @@ function randomTokenString() {
     return crypto.randomBytes(40).toString('hex');
 }
 
+function randomEmailOTP(){
+    let num = Math.floor((Math.random() * 1000000))
+    if(num<10000){
+        num = num*10;
+    }
+    return num;
+}
 async function getRefreshToken(token) {
     const refreshToken = await RefreshToken.findOne({ token });
     if (!refreshToken || !refreshToken.isActive) throw 'Invalid token';
@@ -201,9 +208,9 @@ async function sendVerificationEmail(user) {
     });
 }
 
-async function resendVerificationEmail(email) {
-    const user = await User.findOne({ email })
-    user.verificationToken = randomTokenString();
+async function resendVerificationEmail(userId) {
+    const user = await User.findOne({ userId: userId })
+    user.verificationToken = randomEmailOTP();
     await user.save();
 
     let message;
@@ -251,7 +258,7 @@ async function createUser(userParam) {
     user.roleId = 1;
     user.createdBy = !userParam.mediatorId ? user.userId : userParam.mediatorId;
     user.isTemporaryPassword = userParam.mediatorId ? true : false;
-    user.verificationToken = randomTokenString();
+    user.verificationToken = randomEmailOTP();
     user.maskedEmail = userParam.email.replace(/^(.)(.*)(.@.*)$/, (_, a, b, c) => a + '******' + c);
       
     // save user
@@ -288,6 +295,9 @@ async function verifyEmail({ token }) {
 
     user.isVerified = true;
     user.profileCompletePercentage += 5; 
+    if(user.profileCompletePercentage === 100){
+        user.isProfileComplete = true;
+    }
     user.verificationToken = undefined;
     await user.save();
 
@@ -297,7 +307,7 @@ async function verifyEmail({ token }) {
 async function verifyPhone({ sessionId, userId, action, otpCode }) {
 
     if(action === null) return 'failure';
-
+    const user = await User.findOne({ userId: userId });
     const userProfile = await UserProfile.findOne({ userId: userId });
     if (!userProfile) return 'failure';
 
@@ -310,7 +320,11 @@ async function verifyPhone({ sessionId, userId, action, otpCode }) {
         if(verifyOTPResponse.Status === 'Success' && verifyOTPResponse.Details === 'OTP Matched'){
             
             userProfile.contactInfo.phoneVerified = true;
-            userProfile.percentageComplete += 5;
+            user.profileCompletePercentage += 5;
+            if(user.profileCompletePercentage === 100){
+                user.isProfileComplete = true;
+            }
+            await user.save();
             await userProfile.save();
         }
         else {
