@@ -131,8 +131,8 @@ async function refreshToken({ userId, token, ipAddress }) {
 }
 
 function basicDetails(user) {
-    const { maskedEmail, roleId, userId, isProfileComplete, profileCompletePercentage, createdBy, isActive,  isVerified } = user;
-    return { email: maskedEmail, roleId, userId, isProfileComplete, profileCompletePercentage, createdBy, isActive,  isVerified };
+    const { maskedEmail, roleId, userId, isProfileComplete, profileCompletePercentage, createdBy, isActive,  isVerified,  expiresIn } = user;
+    return { email: maskedEmail, roleId, userId, isProfileComplete, profileCompletePercentage, createdBy, isActive,  isVerified , expiresIn};
 }
 
 function tokenDetails(jwtToken, newRefreshToken) {
@@ -260,6 +260,7 @@ async function createUser(userParam) {
     user.isTemporaryPassword = userParam.mediatorId ? true : false;
     user.verificationToken = randomEmailOTP();
     user.maskedEmail = userParam.email.replace(/^(.)(.*)(.@.*)$/, (_, a, b, c) => a + '******' + c);
+    user.expiresIn = new Date(Date.now() + 90*24*60*60*1000);
       
     // save user
     await user.save();

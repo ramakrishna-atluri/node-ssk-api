@@ -17,8 +17,8 @@ const schema = new Schema({
     },
     isVerified: { type: Boolean, required: false, default: false },
     isProfileComplete: { type: Boolean, required: false, default: false },
-    profileCompletePercentage: {type: Number, required: false, default: 0}
-
+    profileCompletePercentage: {type: Number, required: false, default: 0},
+    expiresIn: {type: Date, required: false}
 },
 { timestamps: true }
 );

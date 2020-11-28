@@ -23,7 +23,13 @@ async function createProfile(profileParam) {
     let contactNumber = profileParam.contactInfo.contactNumber;
 
     if(contactNumber) {
-        const maskedContactNumber = contactNumber.substr(0,contactNumber.indexOf(' ')) + contactNumber.substr(contactNumber.indexOf(' ')+1).replace(' ', '').replace(/\d(?=\d{4})/g, "*");
+
+        let arr = contactNumber.split(" ");
+        const countryCode = arr.splice(0,1).join("");
+        const phoneNumber = arr.join("").replace(' ', '').replace(/\d(?=\d{4})/g, "*");
+        
+        const maskedContactNumber = countryCode + phoneNumber;
+        profileParam.contactInfo.contactNumber = countryCode + arr.join("");
         profileParam.contactInfo.maskedContactNumber = maskedContactNumber;
 
     }
