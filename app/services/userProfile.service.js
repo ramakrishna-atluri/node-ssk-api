@@ -55,6 +55,7 @@ async function updateProfile(profileParam) {
     // copy profileParam properties to user profile
     Object.assign(userProfile, profileParam);
     await userProfile.save();
+    return userProfile;
 }
 
 async function blockProfile(blockParam) {
