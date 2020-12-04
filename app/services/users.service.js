@@ -101,7 +101,7 @@ async function logout({userId}){
     }
 }
 
-async function refreshToken({ userId, token, ipAddress }) {
+async function refreshToken(token, { userId, ipAddress }) {
     const refreshToken = await getRefreshToken(token);
     const user = await User.findOne({ userId });
 
@@ -122,7 +122,6 @@ async function refreshToken({ userId, token, ipAddress }) {
     let body = {
         userDetails : userDetailParams
     }
-
     return body;
 }
 
