@@ -14,6 +14,7 @@ module.exports = {
     blockProfile,
     unBlockProfile,
     getProfile,
+    getMatches,
     delete: _delete
 };
 
@@ -104,6 +105,17 @@ async function unBlockProfile(unBlockParam) {
         }
     }
     
+}
+
+async function getMatches(matchParams) {
+    const userProfile = await UserProfile.findOne({ userId: matchParams.userId });
+    
+        const allMatches = await UserProfile.find({
+            userId: {$ne: userProfile.userId},
+            userId: {$nin: userProfile.blockedProfiles},
+            "basicInfo.gender": {$ne: userProfile.basicInfo.gender }
+        });
+        return allMatches;
 }
 
 async function getAll() {

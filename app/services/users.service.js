@@ -7,6 +7,7 @@ const counterService = require('./counter.service');
 const sendEmail = require('../helpers/send-email');
 const { sendOTP, verifyOTP} = require('../helpers/verify-phone');
 const { response } = require('express');
+const userProfileService = require('./userProfile.service')
 const User = db.User;
 const UserProfile = db.UserProfile;
 const UserPreferences= db.UserPreferences;
@@ -76,24 +77,19 @@ async function getUser({ userId }) {
     let matchObj = [];
     if(userPreferenceParams){
         let matchList = [];
-          matchList.push(await UserProfile.find({$and:[ {"lifeStyleInfo.smokingHabits" : userPreferenceParams.lifeStyleInfo.smokingHabits}, {"lifeStyleInfo.drinkingHabits" : userPreferenceParams.lifeStyleInfo.smokingHabits}]}).where('userId').ne(user.userId));
+          matchList.push(await userProfileService.getMatches({userId}));
 
-            
             for(var i=0;i<matchList.length;i++){
                 for(var j=0;j<matchList[i].length;j++){
                     matchObj.push(matchList[i][j]); 
                 }
             }
-            matchObj = matchObj.filter((elem, index, self) => self.findIndex(
-                (t) => {return (t.userId === elem.userId)}) === index);
     }
-    
     let body = {
         userProfile : userProfileParams,
         userPreferences : userPreferenceParams,
         matchList: matchObj
     }
-
     return body;
 }
 
