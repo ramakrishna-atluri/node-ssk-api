@@ -56,6 +56,10 @@ const schema = new Schema({
     contactNumber: {type: String, required: false},
     maskedContactNumber: {type: String, required: false},
     phoneVerified: {type: Boolean, required: false, default: false},
+    email: { type: String, required: true },
+    maskedEmail: { type: String, required: true },
+    emailVerified: { type: Boolean, required: false, default: false }
+
   },
   blockedProfiles:{ type: Array, required: false}
 },

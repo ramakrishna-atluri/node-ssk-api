@@ -169,10 +169,12 @@ function refreshToken(req, res, next) {
                 res.json(user)
             }
             else {
-                res.status(401).json({ message: 'Email or password is incorrect' })
+                res.status(401).json({ message: 'Invalid Token' })
             }
         })
-        .catch(err => next(err));
+        .catch(err => {
+            res.status(401).json({ message: 'Invalid Token' })
+        });
 }
 
 // helper functions

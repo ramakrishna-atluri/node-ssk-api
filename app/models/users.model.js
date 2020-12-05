@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 
 const schema = new Schema({
     email: { type: String, unique: true, required: true },
-    maskedEmail: { type: String, unique: true, required: true },
+    maskedEmail: { type: String, required: true },
     hash: { type: String, required: true },
     userId: { type: String, required: false },
     isActive: { type: Boolean, required: false, default: true },
@@ -15,7 +15,6 @@ const schema = new Schema({
         token: String,
         expires: Date
     },
-    isVerified: { type: Boolean, required: false, default: false },
     isProfileComplete: { type: Boolean, required: false, default: false },
     profileCompletePercentage: {type: Number, required: false, default: 0},
     expiresIn: {type: Date, required: false}
