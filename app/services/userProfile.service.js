@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const db = require('../helpers/db');
 const counterService = require('./counter.service');
+const { UserPreferences } = require('../helpers/db');
 const UserProfile = db.UserProfile;
 const User = db.User;
 
@@ -15,6 +16,7 @@ module.exports = {
     unBlockProfile,
     getProfile,
     getMatches,
+    saveMatches,
     delete: _delete
 };
 
@@ -109,13 +111,23 @@ async function unBlockProfile(unBlockParam) {
 
 async function getMatches(matchParams) {
     const userProfile = await UserProfile.findOne({ userId: matchParams.userId });
+    const preferenceParams = await UserPreferences.findOne({ userId: matchParams.userId });
     
         const allMatches = await UserProfile.find({
             userId: {$ne: userProfile.userId},
             userId: {$nin: userProfile.blockedProfiles},
-            "basicInfo.gender": {$ne: userProfile.basicInfo.gender }
+            "basicInfo.gender": {$eq: preferenceParams.basicInfo.lookingFor}
         });
         return allMatches;
+}
+
+async function saveMatches(saveParams){
+    const userProfile = await UserProfile.findOne({ userId: saveParams.userId });
+    
+    userProfile.savedProfiles.push(saveParams.saveUserId);
+    userProfile.save();
+    return userProfile;
+    
 }
 
 async function getAll() {

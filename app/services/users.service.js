@@ -76,14 +76,8 @@ async function getUser({ userId }) {
     const userPreferenceParams = await UserPreferences.findOne({userId : user.userId});
     let matchObj = [];
     if(userPreferenceParams){
-        let matchList = [];
-          matchList.push(await userProfileService.getMatches({userId}));
-
-            for(var i=0;i<matchList.length;i++){
-                for(var j=0;j<matchList[i].length;j++){
-                    matchObj.push(matchList[i][j]); 
-                }
-            }
+        //let matchList = [];
+        matchObj = await userProfileService.getMatches({userId});
     }
     let body = {
         userProfile : userProfileParams,

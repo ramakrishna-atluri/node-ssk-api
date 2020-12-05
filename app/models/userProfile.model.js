@@ -57,7 +57,8 @@ const schema = new Schema({
     maskedContactNumber: {type: String, required: false},
     phoneVerified: {type: Boolean, required: false, default: false},
   },
-  blockedProfiles:{ type: Array, required: false}
+  blockedProfiles:{ type: Array, required: false},
+  savedProfiles:{ type: Array, required: false}
 },
 { timestamps: true }
 );

@@ -7,6 +7,7 @@ router.post('/createProfile', createProfile);
 router.post('/updateProfile', updateProfile);
 router.post('/block-profile', blockProfile);
 router.post('/unblock-profile', unBlockProfile);
+router.post('/save-matches', saveMatches);
 router.post('/get-matches', getMatches);
 router.get('/', getAll);
 router.get('/current', getCurrent);
@@ -24,6 +25,12 @@ function createProfile(req, res, next) {
 
 function updateProfile(req, res, next) {
     userProfileService.updateProfile(req.body)
+        .then((userProfile) => res.json(userProfile))
+        .catch(err => next(err));
+}
+
+function saveMatches(req, res, next) {
+    userProfileService.saveMatches(req.body)
         .then((userProfile) => res.json(userProfile))
         .catch(err => next(err));
 }
