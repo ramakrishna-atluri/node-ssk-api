@@ -159,7 +159,8 @@ function _delete(req, res, next) {
 }
 
 function refreshToken(req, res, next) {
-    userService.refreshToken(req.body)
+    const token = get_cookies(req)['refreshToken'];
+    userService.refreshToken(token, req.body)
         .then(user => {
             if(user) {
                 setTokenCookie(res, user.userDetails.tokenDetails.refreshToken);
@@ -168,10 +169,12 @@ function refreshToken(req, res, next) {
                 res.json(user)
             }
             else {
-                res.status(401).json({ message: 'Email or password is incorrect' })
+                res.status(401).json({ message: 'Invalid Token' })
             }
         })
-        .catch(err => next(err));
+        .catch(err => {
+            res.status(401).json({ message: 'Invalid Token' })
+        });
 }
 
 // helper functions
@@ -184,26 +187,13 @@ function setTokenCookie(res, token)
         expires: new Date(Date.now() + 7*24*60*60*1000)
     };
     res.cookie('refreshToken', token, cookieOptions);
-    // res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
-    // res.header('Access-Control-Allow-Credentials','true');
 }
 
-function authenticateJWT (req, res, next) {
-    const authHeader = req.headers.authorization;
-
-    if (authHeader) {
-        const token = authHeader.split(' ')[1];
-
-        jwt.verify(token, config.secret, (err, user) => {
-            console.log(err);
-            if (err) {
-                return res.sendStatus(403);
-            }
-
-            req.user = user;
-            next();
-        });
-    } else {
-        res.sendStatus(401);
-    }
+var get_cookies = function(request) {
+    var cookies = {};
+    request.headers && request.headers.cookie.split(';').forEach(function(cookie) {
+      var parts = cookie.match(/(.*?)=(.*)$/)
+      cookies[ parts[1].trim() ] = (parts[2] || '').trim();
+    });
+    return cookies;
 };
