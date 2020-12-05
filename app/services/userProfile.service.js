@@ -20,11 +20,14 @@ module.exports = {
 
 async function createProfile(profileParam) {
     //validate
+    const user = await User.findOne({ userId: profileParam.userId });
+
+    if (!user) {
+        return 'Cannot find user';
+    }
 
     let contactNumber = profileParam.contactInfo.contactNumber;
-
     if(contactNumber) {
-
         let arr = contactNumber.split(" ");
         const countryCode = arr.splice(0,1).join("");
         const phoneNumber = arr.join("").replace(' ', '').replace(/\d(?=\d{4})/g, "*");
@@ -34,8 +37,10 @@ async function createProfile(profileParam) {
         profileParam.contactInfo.maskedContactNumber = maskedContactNumber;
 
     }
-    const profile = new UserProfile(profileParam);
-    const user = await User.findOne({ userId: profileParam.userId });
+
+    profileParam.contactInfo.email =  user.email;
+    profileParam.contactInfo.maskedEmail = user.maskedEmail;
+    const profile = new UserProfile(profileParam);    
     
     // save profile
     user.profileCompletePercentage += 80;
@@ -44,7 +49,10 @@ async function createProfile(profileParam) {
     }
     await user.save();
     await profile.save();
+
     profile.contactInfo.contactNumber = profile.contactInfo.maskedContactNumber;
+    profile.contactInfo.email = profile.contactInfo.maskedEmail;
+
     return profile;
 }
 
@@ -60,11 +68,15 @@ async function updateProfile(profileParam) {
     if (!userProfile) throw 'User not found';
     
     profileParam.contactInfo.contactNumber = userProfile.contactInfo.contactNumber;
+    profileParam.contactInfo.email = userProfile.contactInfo.email;
+
     // copy profileParam properties to user profile
     Object.assign(userProfile, profileParam);
     await userProfile.save();
 
     userProfile.contactInfo.contactNumber = userProfile.contactInfo.maskedContactNumber;
+    userProfile.contactInfo.email = userProfile.contactInfo.maskedEmail;
+
     return userProfile;
 }
 
@@ -81,7 +93,9 @@ async function blockProfile(blockParam) {
             }else{
                 userProfile.blockedProfiles.push({blockedId: blockParam.blockId, firstName: blockedProfile.basicInfo.firstName, lastName: blockedProfile.basicInfo.lastName});
                 await userProfile.save();
+
                 userProfile.contactInfo.contactNumber = userProfile.contactInfo.maskedContactNumber;
+                userProfile.contactInfo.email = userProfile.contactInfo.maskedEmail;
                 return userProfile;
             }
         }
@@ -89,6 +103,7 @@ async function blockProfile(blockParam) {
         userProfile.blockedProfiles.push({blockedId: blockParam.blockId, firstName: blockedProfile.basicInfo.firstName, lastName: blockedProfile.basicInfo.lastName});
         await userProfile.save();
         userProfile.contactInfo.contactNumber = userProfile.contactInfo.maskedContactNumber;
+        userProfile.contactInfo.email = userProfile.contactInfo.maskedEmail;
         return userProfile;
     }
     
@@ -101,6 +116,8 @@ async function unBlockProfile(unBlockParam) {
             userProfile.blockedProfiles.splice(i,1);
             await userProfile.save();
             userProfile.contactInfo.contactNumber = userProfile.contactInfo.maskedContactNumber;
+            userProfile.contactInfo.email = userProfile.contactInfo.maskedEmail;
+
             return userProfile;
         }
     }
@@ -115,6 +132,7 @@ async function getMatches(matchParams) {
             userId: {$nin: userProfile.blockedProfiles},
             "basicInfo.gender": {$ne: userProfile.basicInfo.gender }
         });
+
         return allMatches;
 }
 

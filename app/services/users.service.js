@@ -73,18 +73,20 @@ async function getUser({ userId }) {
     let userProfileParams = await UserProfile.findOne({userId : user.userId});
     if(userProfileParams)
         userProfileParams.contactInfo.contactNumber = userProfileParams.contactInfo.maskedContactNumber;
+        userProfileParams.contactInfo.email = userProfileParams.contactInfo.maskedEmail;
+
     const userPreferenceParams = await UserPreferences.findOne({userId : user.userId});
     let matchObj = [];
     if(userPreferenceParams){
-        let matchList = [];
-          matchList.push(await userProfileService.getMatches({userId}));
-
-            for(var i=0;i<matchList.length;i++){
-                for(var j=0;j<matchList[i].length;j++){
-                    matchObj.push(matchList[i][j]); 
-                }
-            }
+        const matchObj1 = await userProfileService.getMatches({userId});        
+        
+        matchObj1.forEach((profile, i) => {
+            profile.contactInfo.contactNumber = profile.contactInfo.maskedContactNumber;
+            profile.contactInfo.email = profile.contactInfo.maskedEmail;
+            matchObj.push(profile);
+        });
     }
+
     let body = {
         userProfile : userProfileParams,
         userPreferences : userPreferenceParams,
@@ -287,15 +289,18 @@ async function verifyEmail({ token }) {
     const user = await User.findOne({ verificationToken: token });
 
     if (!user) return 'failure';
-    
 
-    user.isVerified = true;
+    const userProfile = await UserProfile.findOne({ userId: userId }); 
+    userProfile.contactInfo.phoneVerified = true;
+
     user.profileCompletePercentage += 5; 
     if(user.profileCompletePercentage === 100){
         user.isProfileComplete = true;
     }
     user.verificationToken = undefined;
+
     await user.save();
+    await userProfile.save();
 
     return 'success'
 }
@@ -407,7 +412,6 @@ async function sendResetPasswordConfirmEmail(user) {
 
     return "Success";
 }
-
 
 async function updateCounter(sequenceName) {
 
