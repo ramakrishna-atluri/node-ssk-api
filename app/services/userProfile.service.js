@@ -6,6 +6,7 @@ const counterService = require('./counter.service');
 const { UserPreferences } = require('../helpers/db');
 const UserProfile = db.UserProfile;
 const User = db.User;
+const SavedProfiles = db.SavedProfiles;
 
 module.exports = {
     getAll,
@@ -15,8 +16,9 @@ module.exports = {
     blockProfile,
     unBlockProfile,
     getProfile,
-    getMatches,
+    getTopTenProfiles,
     saveMatches,
+    getTopTenSavedProfiles,
     delete: _delete
 };
 
@@ -28,6 +30,12 @@ async function createProfile(profileParam) {
         return 'Cannot find user';
     }
 
+    let today = new Date();
+    let birthDate = new Date(profileParam.kundaliDetails.dob);
+    let age = today.getFullYear() - birthDate.getFullYear();
+
+    profileParam.basicInfo.age = age;
+        
     let contactNumber = profileParam.contactInfo.contactNumber;
     if(contactNumber) {
         let arr = contactNumber.split(" ");
@@ -126,28 +134,71 @@ async function unBlockProfile(unBlockParam) {
     
 }
 
-async function getMatches(matchParams) {
+async function getTopTenProfiles(matchParams) {
     const userProfile = await UserProfile.findOne({ userId: matchParams.userId });
     const preferenceParams = await UserPreferences.findOne({ userId: matchParams.userId });
+    const savedProfileParams = await SavedProfiles.find({ userId: matchParams.userId }).select(['+profiles.userId']);
     
         const allMatches = await UserProfile.find({
             userId: {$ne: userProfile.userId},
             userId: {$nin: userProfile.blockedProfiles},
+            userId: {$nin: savedProfileParams},
             "basicInfo.gender": {$eq: preferenceParams.basicInfo.lookingFor}
-        });
-
+        }).select(['userId',
+                'basicInfo.firstName',
+                'basicInfo.lastName',
+                'basicInfo.age',
+                'basicInfo.height',
+                'kundaliDetails.dob',
+                'locationInfo',
+                'educationAndCareerInfo.workingAs']);
         return allMatches;
 }
 
 async function saveMatches(saveParams){
-    const userProfile = await UserProfile.findOne({ userId: saveParams.userId });
+
+    const user = await SavedProfiles.findOne({ userId: saveParams.userId });
     
-    userProfile.savedProfiles.push(saveParams.saveUserId);
-    userProfile.save();
-    return userProfile;
-    
+    if(!user){
+        let savedMatchParams = {};
+            savedMatchParams.userId = saveParams.userId;
+            savedMatchParams.profiles = [{
+                userId: saveParams.saveUserId,
+                savedAt: new Date.now()
+            }]
+            const savedProfileRecord = new SavedProfiles(savedMatchParams);
+            await savedProfileRecord.save();
+    }else{
+        let savedParams = {
+            saveUserId: saveParams.saveUserId,
+            savedAt: new Date.now()
+        }
+        user.profiles.push(savedParams)
+        await user.save();
+    }
+    return "success";
 }
 
+async function getTopTenSavedProfiles(userId){
+    const savedProfiles = await SavedProfiles.findOne({userId : userId});
+    let savedProfilesObj = [];
+    if(savedProfiles){
+        savedProfiles.profiles.forEach(element => async function(){
+            const userProfile = await UserProfile.findOne({userId: element.userId});
+            let savedProfileParams = {};
+            savedProfileParams.userId = element.userId;
+            savedProfileParams.basicInfo.firstName = userProfile.basicInfo.firstName;
+            savedProfileParams.basicInfo.lastName = userProfile.basicInfo.lastName;
+            savedProfileParams.basicInfo.age = userProfile.basicInfo.age;
+            savedProfileParams.basicInfo.height = userProfile.basicInfo.height;
+            savedProfileParams.kundaliDetails.dob = userProfile.kundaliDetails.dob;
+            savedProfileParams.locationInfo = userProfile.locationInfo;
+            savedProfileParams.educationAndCareerInfo.workingAs = userProfile.educationAndCareerInfo.workingAs;
+            savedProfilesObj.push(savedProfileParams);
+        });
+        return savedProfilesObj;
+    }
+}
 async function getAll() {
     return await User.find();
 }
