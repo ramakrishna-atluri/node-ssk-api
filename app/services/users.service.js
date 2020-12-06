@@ -80,7 +80,7 @@ async function getUser({ userId }) {
     const userPreferenceParams = await UserPreferences.findOne({userId : user.userId});
     let matchObj = [];
     if(userPreferenceParams){
-        matchObj = await userProfileService.getTopTenProfiles({userId});        
+        matchObj = await userProfileService.getTopTenProfiles(userId);        
         
         // matchObj1.forEach((profile, i) => {
         //     profile.contactInfo.contactNumber = profile.contactInfo.maskedContactNumber;
