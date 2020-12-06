@@ -134,22 +134,21 @@ async function unBlockProfile(unBlockParam) {
     
 }
 
-async function getTopTenProfiles(matchParams) {
-    const userProfile = await UserProfile.findOne({ userId: matchParams.userId });
-    const preferenceParams = await UserPreferences.findOne({ userId: matchParams.userId });
-    const savedProfileParams = await SavedProfiles.find({ userId: matchParams.userId }).select(['+profiles.userId']);
+async function getTopTenProfiles(userId) {
+    const userProfile = await UserProfile.findOne({ userId: userId });
+    const preferenceParams = await UserPreferences.findOne({ userId: userId });
+    const savedProfileParams = await SavedProfiles.findOne({ userId: userId });
     
         const allMatches = await UserProfile.find({
             userId: {$ne: userProfile.userId},
             userId: {$nin: userProfile.blockedProfiles},
-            userId: {$nin: savedProfileParams},
+            userId: {$nin: savedProfileParams.profiles.map(function(item){return item.userId;})},
             "basicInfo.gender": {$eq: preferenceParams.basicInfo.lookingFor}
         }).select(['userId',
                 'basicInfo.firstName',
                 'basicInfo.lastName',
                 'basicInfo.age',
                 'basicInfo.height',
-                'kundaliDetails.dob',
                 'locationInfo',
                 'educationAndCareerInfo.workingAs']);
         return allMatches;
@@ -181,22 +180,19 @@ async function saveMatches(saveParams){
 
 async function getTopTenSavedProfiles(userId){
     const savedProfiles = await SavedProfiles.findOne({userId : userId});
-    let savedProfilesObj = [];
-    if(savedProfiles){
-        savedProfiles.profiles.forEach(element => async function(){
-            const userProfile = await UserProfile.findOne({userId: element.userId});
-            let savedProfileParams = {};
-            savedProfileParams.userId = element.userId;
-            savedProfileParams.basicInfo.firstName = userProfile.basicInfo.firstName;
-            savedProfileParams.basicInfo.lastName = userProfile.basicInfo.lastName;
-            savedProfileParams.basicInfo.age = userProfile.basicInfo.age;
-            savedProfileParams.basicInfo.height = userProfile.basicInfo.height;
-            savedProfileParams.kundaliDetails.dob = userProfile.kundaliDetails.dob;
-            savedProfileParams.locationInfo = userProfile.locationInfo;
-            savedProfileParams.educationAndCareerInfo.workingAs = userProfile.educationAndCareerInfo.workingAs;
-            savedProfilesObj.push(savedProfileParams);
-        });
-        return savedProfilesObj;
+
+    if(savedProfiles.profiles){
+        const data = await UserProfile.find({
+            userId: {$in: savedProfiles.profiles.map(function(item){return item.userId;})}
+            }).select(['userId',
+                'basicInfo.firstName',
+                'basicInfo.lastName',
+                'basicInfo.age',
+                'basicInfo.height',
+                'locationInfo',
+                'educationAndCareerInfo.workingAs']);
+
+        return data;
     }
 }
 async function getAll() {

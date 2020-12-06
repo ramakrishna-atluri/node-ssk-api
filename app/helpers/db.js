@@ -12,6 +12,7 @@ module.exports = {
     UserPreferences: require('../models/userPreferences.model'),
     RefreshToken: require('../models/refreshToken.model'),
     SavedProfiles: require('../models/savedProfiles.model'),
+    Notifications: require('../models/notifications.model'),
     isValidId
 };
 
