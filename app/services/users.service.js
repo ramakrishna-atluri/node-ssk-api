@@ -7,7 +7,8 @@ const counterService = require('./counter.service');
 const sendEmail = require('../helpers/send-email');
 const { sendOTP, verifyOTP} = require('../helpers/verify-phone');
 const { response } = require('express');
-const userProfileService = require('./userProfile.service')
+const userProfileService = require('./userProfile.service');
+const { SavedProfiles } = require('../helpers/db');
 const User = db.User;
 const UserProfile = db.UserProfile;
 const UserPreferences= db.UserPreferences;
@@ -71,26 +72,31 @@ async function getUser({ userId }) {
     const user = await User.findOne({ userId });
    
     let userProfileParams = await UserProfile.findOne({userId : user.userId});
-    if(userProfileParams)
+    if(userProfileParams){
         userProfileParams.contactInfo.contactNumber = userProfileParams.contactInfo.maskedContactNumber;
         userProfileParams.contactInfo.email = userProfileParams.contactInfo.maskedEmail;
+    }
 
     const userPreferenceParams = await UserPreferences.findOne({userId : user.userId});
     let matchObj = [];
     if(userPreferenceParams){
-        const matchObj1 = await userProfileService.getMatches({userId});        
+        matchObj = await userProfileService.getTopTenProfiles({userId});        
         
-        matchObj1.forEach((profile, i) => {
-            profile.contactInfo.contactNumber = profile.contactInfo.maskedContactNumber;
-            profile.contactInfo.email = profile.contactInfo.maskedEmail;
-            matchObj.push(profile);
-        });
+        // matchObj1.forEach((profile, i) => {
+        //     profile.contactInfo.contactNumber = profile.contactInfo.maskedContactNumber;
+        //     profile.contactInfo.email = profile.contactInfo.maskedEmail;
+        //     matchObj.push(profile);
+        // });
     }
+
+    const savedProfiles = await userProfileService.getTopTenSavedProfiles(user.userId);
 
     let body = {
         userProfile : userProfileParams,
         userPreferences : userPreferenceParams,
-        matchList: matchObj
+        matchList: matchObj,
+        savedProfiles: savedProfiles
+        
     }
     return body;
 }

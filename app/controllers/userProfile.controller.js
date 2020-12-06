@@ -7,7 +7,11 @@ router.post('/createProfile', createProfile);
 router.post('/updateProfile', updateProfile);
 router.post('/block-profile', blockProfile);
 router.post('/unblock-profile', unBlockProfile);
+router.post('/save-matches', saveMatches);
 router.post('/get-matches', getMatches);
+router.post('/get-top-ten-profiles', getTopTenProfiles);
+router.post('/get-top-ten-saved-profiles', getTopTenSavedProfiles);
+
 router.get('/', getAll);
 router.get('/current', getCurrent);
 router.get('/:id', getById);
@@ -28,8 +32,26 @@ function updateProfile(req, res, next) {
         .catch(err => next(err));
 }
 
+function saveMatches(req, res, next) {
+    userProfileService.saveMatches(req.body)
+        .then((userProfile) => res.json(userProfile))
+        .catch(err => next(err));
+}
+
 function getMatches(req, res, next) {
     userProfileService.getMatches(req.body)
+        .then((matchList) => res.json(matchList))
+        .catch(err => next(err));
+}
+
+function getTopTenProfiles(req, res, next) {
+    userProfileService.getTopTenProfiles(req.body)
+        .then((matchList) => res.json(matchList))
+        .catch(err => next(err));
+}
+
+function getTopTenSavedProfiles(req, res, next) {
+    userProfileService.getTopTenSavedProfiles(req.body)
         .then((matchList) => res.json(matchList))
         .catch(err => next(err));
 }

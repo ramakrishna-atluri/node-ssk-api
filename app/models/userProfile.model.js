@@ -11,7 +11,8 @@ const schema = new Schema({
     height: { type: String, required: false },
     bloodGroup: { type: String, required: false },
     bodyWeight: { type: String, required: false },
-    disability: { type: String, required: false }
+    disability: { type: String, required: false },
+    age: { type: String, required: false },
   },
   kundaliDetails:{
     dob: { type: String, required: false },
@@ -48,9 +49,18 @@ const schema = new Schema({
     drinkingHabits: {type: String, required: false}
   },
   locationInfo:{
-    country: {type: String, required: false},
-    state: {type: String, required: false},
-    city: {type: String, required: false}
+    country: {
+      id: {type: String, required: false},
+      name: {type: String, required: false},
+    },
+    state: {
+      id: {type: String, required: false},
+      name: {type: String, required: false},
+    },
+    city: {
+      id: {type: String, required: false},
+      name: {type: String, required: false},
+    }
   },
   contactInfo:{
     contactNumber: {type: String, required: false},
@@ -59,7 +69,6 @@ const schema = new Schema({
     email: { type: String, required: true },
     maskedEmail: { type: String, required: true },
     emailVerified: { type: Boolean, required: false, default: false }
-
   },
   blockedProfiles:{ type: Array, required: false}
 },
