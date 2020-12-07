@@ -11,10 +11,11 @@ router.post('/save-matches', saveMatches);
 router.post('/get-matches', getMatches);
 router.post('/get-top-ten-profiles', getTopTenProfiles);
 router.post('/get-top-ten-saved-profiles', getTopTenSavedProfiles);
+router.post('/getProfileById', getProfileById);
 
 router.get('/', getAll);
 router.get('/current', getCurrent);
-router.get('/:id', getById);
+
 router.put('/:id', update);
 router.delete('/:id', _delete);
 
@@ -82,6 +83,12 @@ function unBlockProfile(req, res, next) {
     .catch(err => next(err));
 }
 
+function getProfileById(req, res, next) {
+    userProfileService.getProfileById(req.body)
+        .then(user => user ? res.json(user) : res.sendStatus(404))
+        .catch(err => next(err));
+}
+
 function getAll(req, res, next) {
     userProfileService.getAll()
         .then(users => res.json(users))
@@ -90,12 +97,6 @@ function getAll(req, res, next) {
 
 function getCurrent(req, res, next) {
     userProfileService.getById(req.user.sub)
-        .then(user => user ? res.json(user) : res.sendStatus(404))
-        .catch(err => next(err));
-}
-
-function getById(req, res, next) {
-    userProfileService.getById(req.params.id)
         .then(user => user ? res.json(user) : res.sendStatus(404))
         .catch(err => next(err));
 }

@@ -9,10 +9,12 @@ const { sendOTP, verifyOTP} = require('../helpers/verify-phone');
 const { response } = require('express');
 const userProfileService = require('./userProfile.service');
 const { SavedProfiles } = require('../helpers/db');
+const notificationService = require('./notifications.service');
 const User = db.User;
 const UserProfile = db.UserProfile;
 const UserPreferences= db.UserPreferences;
 const RefreshToken = db.RefreshToken;
+const Notifications = db.Notifications;
 
 module.exports = {
     authenticate,
@@ -78,24 +80,21 @@ async function getUser({ userId }) {
     }
 
     const userPreferenceParams = await UserPreferences.findOne({userId : user.userId});
-    let matchObj = [];
+    let topTenProfiles = [];
     if(userPreferenceParams){
-        matchObj = await userProfileService.getTopTenProfiles(userId);        
-        
-        // matchObj1.forEach((profile, i) => {
-        //     profile.contactInfo.contactNumber = profile.contactInfo.maskedContactNumber;
-        //     profile.contactInfo.email = profile.contactInfo.maskedEmail;
-        //     matchObj.push(profile);
-        // });
+        topTenProfiles = await userProfileService.getTopTenProfiles(userId);
     }
 
-    const savedProfiles = await userProfileService.getTopTenSavedProfiles(user.userId);
+    const topTenSavedProfiles = await userProfileService.getTopTenSavedProfiles(user.userId);
+
+    const notificationCount = await notificationService.getNotificationCount({userId});
 
     let body = {
         userProfile : userProfileParams,
         userPreferences : userPreferenceParams,
-        matchList: matchObj,
-        savedProfiles: savedProfiles
+        topTenProfiles: topTenProfiles,
+        topTenSavedProfiles: topTenSavedProfiles,
+        notificationCount: notificationCount
         
     }
     return body;
