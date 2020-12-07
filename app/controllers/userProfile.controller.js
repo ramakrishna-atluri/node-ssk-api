@@ -5,19 +5,15 @@ const userProfileService = require('../services/userProfile.service');
 // routes
 router.post('/createProfile', createProfile);
 router.post('/updateProfile', updateProfile);
-router.post('/block-profile', blockProfile);
-router.post('/unblock-profile', unBlockProfile);
-router.post('/save-matches', saveMatches);
+router.post('/viewProfile', viewProfile),
+router.post('/blockProfile', blockProfile);
+router.post('/unblockProfile', unBlockProfile);
+router.post('/saveProfile', saveProfile);
+router.post('/connectProfile', connectProfile);
+router.post('/cancelRequest', cancelRequest);
 router.post('/get-matches', getMatches);
 router.post('/get-top-ten-profiles', getTopTenProfiles);
 router.post('/get-top-ten-saved-profiles', getTopTenSavedProfiles);
-router.post('/getProfileById', getProfileById);
-
-router.get('/', getAll);
-router.get('/current', getCurrent);
-
-router.put('/:id', update);
-router.delete('/:id', _delete);
 
 module.exports = router;
 
@@ -33,8 +29,26 @@ function updateProfile(req, res, next) {
         .catch(err => next(err));
 }
 
-function saveMatches(req, res, next) {
-    userProfileService.saveMatches(req.body)
+function saveProfile(req, res, next) {
+    userProfileService.saveProfile(req.body)
+        .then((response) => res.json(response))
+        .catch(err => next(err));
+}
+
+function connectProfile(req, res, next) {
+    userProfileService.connectProfile(req.body)
+        .then((response) => res.json(response))
+        .catch(err => next(err));
+}
+
+function cancelRequest(req, res, next) {
+    userProfileService.cancelRequest(req.body)
+        .then((response) => res.json(response))
+        .catch(err => next(err));
+}
+
+function viewProfile(req, res, next) {
+    userProfileService.saveProfile(req.body)
         .then((userProfile) => res.json(userProfile))
         .catch(err => next(err));
 }
@@ -81,34 +95,4 @@ function unBlockProfile(req, res, next) {
         }
     })
     .catch(err => next(err));
-}
-
-function getProfileById(req, res, next) {
-    userProfileService.getProfileById(req.body)
-        .then(user => user ? res.json(user) : res.sendStatus(404))
-        .catch(err => next(err));
-}
-
-function getAll(req, res, next) {
-    userProfileService.getAll()
-        .then(users => res.json(users))
-        .catch(err => next(err));
-}
-
-function getCurrent(req, res, next) {
-    userProfileService.getById(req.user.sub)
-        .then(user => user ? res.json(user) : res.sendStatus(404))
-        .catch(err => next(err));
-}
-
-function update(req, res, next) {
-    userProfileService.update(req.params.id, req.body)
-        .then(() => res.json({}))
-        .catch(err => next(err));
-}
-
-function _delete(req, res, next) {
-    userProfileService.delete(req.params.id)
-        .then(() => res.json({}))
-        .catch(err => next(err));
 }

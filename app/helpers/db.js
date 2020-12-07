@@ -11,7 +11,7 @@ module.exports = {
     UserRole: require('../models/userRole.model'),
     UserPreferences: require('../models/userPreferences.model'),
     RefreshToken: require('../models/refreshToken.model'),
-    SavedProfiles: require('../models/savedProfiles.model'),
+    Connections: require('../models/connections.model'),
     Notifications: require('../models/notifications.model'),
     isValidId
 };

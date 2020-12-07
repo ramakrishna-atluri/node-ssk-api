@@ -15,6 +15,7 @@ const UserProfile = db.UserProfile;
 const UserPreferences= db.UserPreferences;
 const RefreshToken = db.RefreshToken;
 const Notifications = db.Notifications;
+const Connections = db.Connections;
 
 module.exports = {
     authenticate,
