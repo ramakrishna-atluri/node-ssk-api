@@ -8,7 +8,8 @@ module.exports = {
     updateNotification,
     deleteNotification,
     getNotifications,
-    deleteAllNotifications
+    deleteAllNotifications,
+    getNotificationCount
 };
 
 async function createNotification({sender, receiver, type, content})
@@ -65,6 +66,11 @@ async function getNotifications({userId})
     await Notifications.updateMany({receiver: userId, type: 'view'}, { $set: { isRead: true, } } , { multi: true });
 
     return notifications;
+}
+
+async function getNotificationCount({userId}){
+    const notificationCount = await Notifications.find({receiver : userId, isRead: false}).countDocuments();
+    return notificationCount;
 }
 
 function getNotificationContent(senderUser, type)

@@ -7,10 +7,11 @@ const { UserPreferences } = require('../helpers/db');
 const UserProfile = db.UserProfile;
 const User = db.User;
 const SavedProfiles = db.SavedProfiles;
+const notifcationService = require('./notifications.service');
 
 module.exports = {
     getAll,
-    getById,
+    getProfileById,
     createProfile,
     updateProfile,
     blockProfile,
@@ -143,6 +144,7 @@ async function getTopTenProfiles(userId) {
             userId: {$ne: userProfile.userId},
             userId: {$nin: userProfile.blockedProfiles},
             userId: {$nin: savedProfileParams.profiles.map(function(item){return item.userId;})},
+            "locationInfo.country.id": {$in: preferenceParams.locationInfo.country},
             "basicInfo.gender": {$eq: preferenceParams.basicInfo.lookingFor}
         }).select(['userId',
                 'basicInfo.firstName',
@@ -163,14 +165,14 @@ async function saveMatches(saveParams){
             savedMatchParams.userId = saveParams.userId;
             savedMatchParams.profiles = [{
                 userId: saveParams.saveUserId,
-                savedAt: new Date.now()
+                savedAt: new Date(Date.now())
             }]
             const savedProfileRecord = new SavedProfiles(savedMatchParams);
             await savedProfileRecord.save();
     }else{
         let savedParams = {
             saveUserId: saveParams.saveUserId,
-            savedAt: new Date.now()
+            savedAt: new Date(Date.now())
         }
         user.profiles.push(savedParams)
         await user.save();
@@ -181,7 +183,7 @@ async function saveMatches(saveParams){
 async function getTopTenSavedProfiles(userId){
     const savedProfiles = await SavedProfiles.findOne({userId : userId});
 
-    if(savedProfiles.profiles){
+    if(savedProfiles){
         const data = await UserProfile.find({
             userId: {$in: savedProfiles.profiles.map(function(item){return item.userId;})}
             }).select(['userId',
@@ -199,8 +201,15 @@ async function getAll() {
     return await User.find();
 }
 
-async function getById(id) {
-    return await User.findById(id);
+async function getProfileById({userId,viewProfileId}) {
+    const profile =  await UserProfile.findOne({userId: viewProfileId});
+
+    if(!profile){
+        return 'user not found';
+    }else{
+        await notifcationService.createNotification({sender: userId, receiver: viewProfileId, type: 'view'});
+        return profile;
+    }
 }
 
 async function _delete(id) {
