@@ -1,26 +1,22 @@
-const config = require('../config.json');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
 const db = require('../helpers/db');
-const counterService = require('./counter.service');
-const { UserPreferences } = require('../helpers/db');
+const notifcationService = require('./notifications.service');
+const UserPreferences = db.UserPreferences;
 const UserProfile = db.UserProfile;
 const User = db.User;
-const SavedProfiles = db.SavedProfiles;
-const notifcationService = require('./notifications.service');
+const Connections = db.Connections;
 
 module.exports = {
-    getAll,
-    getProfileById,
     createProfile,
     updateProfile,
     blockProfile,
     unBlockProfile,
+    saveProfile,
+    viewProfile,
+    connectProfile,
+    cancelRequest,
     getProfile,
     getTopTenProfiles,
-    saveMatches,
     getTopTenSavedProfiles,
-    delete: _delete
 };
 
 async function createProfile(profileParam) {
@@ -81,6 +77,12 @@ async function updateProfile(profileParam) {
     profileParam.contactInfo.contactNumber = userProfile.contactInfo.contactNumber;
     profileParam.contactInfo.email = userProfile.contactInfo.email;
 
+    let today = new Date();
+    let birthDate = new Date(profileParam.kundaliDetails.dob);
+    let age = today.getFullYear() - birthDate.getFullYear();
+
+    profileParam.basicInfo.age = age;
+
     // copy profileParam properties to user profile
     Object.assign(userProfile, profileParam);
     await userProfile.save();
@@ -92,59 +94,238 @@ async function updateProfile(profileParam) {
 }
 
 async function blockProfile(blockParam) {
-    const userProfile = await UserProfile.findOne({ userId: blockParam.userId });
     const blockedProfile = await UserProfile.findOne({ userId: blockParam.blockId });
+    const userConnections = await Connections.findOne({ userId: blockParam.userId });
     // validate
     if (!blockedProfile) return 'Profile not found';
-    
-    if(userProfile.blockedProfiles.length > 0){
-        for(var i=0;i<userProfile.blockedProfiles.length;i++){
-            if( blockParam.blockId === userProfile.blockedProfiles[i].blockedId){
-                return 'User already blocked';
-            }else{
-                userProfile.blockedProfiles.push({blockedId: blockParam.blockId, firstName: blockedProfile.basicInfo.firstName, lastName: blockedProfile.basicInfo.lastName});
-                await userProfile.save();
 
-                userProfile.contactInfo.contactNumber = userProfile.contactInfo.maskedContactNumber;
-                userProfile.contactInfo.email = userProfile.contactInfo.maskedEmail;
-                return userProfile;
-            }
-        }
+    if(!userConnections && !userConnections.blocked){
+        let blockedProfileParams = {};
+            blockedProfileParams.userId = blockParam.userId;
+            blockedProfileParams.blocked = [{
+                userId: blockParam.blockId,
+                blockedAt: new Date(Date.now())
+            }]
+
+            const blockedProfileRecord = new Connections(blockedProfileParams);
+            await blockedProfileRecord.save();
     }else{
-        userProfile.blockedProfiles.push({blockedId: blockParam.blockId, firstName: blockedProfile.basicInfo.firstName, lastName: blockedProfile.basicInfo.lastName});
-        await userProfile.save();
-        userProfile.contactInfo.contactNumber = userProfile.contactInfo.maskedContactNumber;
-        userProfile.contactInfo.email = userProfile.contactInfo.maskedEmail;
-        return userProfile;
+
+        const blockedId = userConnections.blocked.filter(item => item.userId === blockParam.blockId);
+
+        if(blockedId)
+            return 'Profile is already blocked'
+
+        let blockedParams = {
+            userId: blockParam.blockId,
+            blockedAt: new Date(Date.now())
+        }
+
+        userConnections.blocked.push(blockedParams)
+        await userConnections.save();
     }
+
+    return "success";
+    
+    // if(userProfile.blockedProfiles.length > 0){
+    //     for(var i=0;i<userProfile.blockedProfiles.length;i++){
+    //         if( blockParam.blockId === userProfile.blockedProfiles[i].blockedId){
+    //             return 'User already blocked';
+    //         }else{
+    //             userProfile.blockedProfiles.push({blockedId: blockParam.blockId, firstName: blockedProfile.basicInfo.firstName, lastName: blockedProfile.basicInfo.lastName});
+    //             await userProfile.save();
+
+    //             userProfile.contactInfo.contactNumber = userProfile.contactInfo.maskedContactNumber;
+    //             userProfile.contactInfo.email = userProfile.contactInfo.maskedEmail;
+    //             return userProfile;
+    //         }
+    //     }
+    // }else{
+    //     userProfile.blockedProfiles.push({blockedId: blockParam.blockId, firstName: blockedProfile.basicInfo.firstName, lastName: blockedProfile.basicInfo.lastName});
+    //     await userProfile.save();
+    //     userProfile.contactInfo.contactNumber = userProfile.contactInfo.maskedContactNumber;
+    //     userProfile.contactInfo.email = userProfile.contactInfo.maskedEmail;
+    //     return userProfile;
+    // }
     
 }
 
 async function unBlockProfile(unBlockParam) {
-    const userProfile = await UserProfile.findOne({ userId: unBlockParam.userId });
-    for(var i=0;i<userProfile.blockedProfiles.length;i++){
-        if(unBlockParam.unBlockId ===  userProfile.blockedProfiles[i].blockedId){
-            userProfile.blockedProfiles.splice(i,1);
-            await userProfile.save();
-            userProfile.contactInfo.contactNumber = userProfile.contactInfo.maskedContactNumber;
-            userProfile.contactInfo.email = userProfile.contactInfo.maskedEmail;
+    let userConnections = await Connections.findOne({ userId: unBlockParam.userId });
 
-            return userProfile;
-        }
+    if(userConnections && userConnections.blocked)
+    {
+        userConnections.blocked = userConnections.blocked.filter(item => item.userId !== unBlockParam.unBlockId);
+
+        const updatedUserConnections = new Connections();
+        Object.assign(updatedUserConnections, userConnections);
+
+        await updatedUserConnections.save();
+
+        return 'success';
     }
+
+    return 'failure';
+    // const userProfile = await UserProfile.findOne({ userId: unBlockParam.userId });
+    // for(var i=0;i<userProfile.blockedProfiles.length;i++){
+    //     if(unBlockParam.unBlockId ===  userProfile.blockedProfiles[i].blockedId){
+    //         userProfile.blockedProfiles.splice(i,1);
+    //         await userProfile.save();
+    //         userProfile.contactInfo.contactNumber = userProfile.contactInfo.maskedContactNumber;
+    //         userProfile.contactInfo.email = userProfile.contactInfo.maskedEmail;
+
+    //         return userProfile;
+    //     }
+    // }    
+}
+
+async function connectProfile(connectParam) {
+    const userConnections = await Connections.findOne({ userId: connectParam.userId });
+    const receivingUserConnections = await Connections.findOne({ userId: connectParam.connectId });
     
+    if(!userConnections && !userConnections.requested){
+        let requestedProfileParams = {};
+            requestedProfileParams.userId = connectParam.userId;
+            requestedProfileParams.requested = [{
+                userId: connectParam.connectId,
+                requestedAt: new Date(Date.now())
+            }]
+
+            const requestedProfileRecord = new Connections(requestedProfileParams);
+            await requestedProfileRecord.save();
+           
+    }else{
+        let requestedParams = {
+            userId: connectParam.connectId,
+            requestedAt: new Date(Date.now())
+        }
+
+        userConnections.requested.push(requestedParams)
+        await userConnections.save();
+    }
+
+    if(!receivingUserConnections && !receivingUserConnections.received){
+        let receivedProfileParams = {};
+            receivedProfileParams.userId = connectParam.connectId;
+            receivedProfileParams.received = [{
+                userId: connectParam.userId,
+                receivedAt: new Date(Date.now())
+            }]
+
+            const receivedProfileRecord = new Connections(receivedProfileParams);
+            await receivedProfileRecord.save();
+           
+    }else{
+        let receivedParams = {
+            userId: connectParam.userId,
+            receivedAt: new Date(Date.now())
+        }
+
+        userConnections.received.push(receivedParams)
+        await userConnections.save();
+    }
+
+    await notifcationService.createNotification({sender: connectParam.userId, receiver: connectParam.connectId, type: 'connect'});
+
+    return "success";    
+}
+
+async function cancelRequest(disconnectParam) {
+    let userConnections = await Connections.findOne({ userId: disconnectParam.userId });
+    let receivingUserConnections = await Connections.findOne({ userId: disconnectParam.disconnectId });
+
+    if(userConnections && userConnections.requested)
+    {
+        userConnections.requested = userConnections.requested.filter(item => item.userId !== disconnectParam.disconnectId);
+
+        const updatedUserConnections = new Connections();
+        Object.assign(updatedUserConnections, userConnections);
+
+        await updatedUserConnections.save();
+
+        await notifcationService.deleteNotification({sender: connectParam.userId, receiver: connectParam.connectId, type: 'connect'});        
+    }
+
+    if(receivingUserConnections && receivingUserConnections.received) {
+        receivingUserConnections.received = receivingUserConnections.received.filter(item => item.userId !== disconnectParam.userId);
+
+        const updatedRUserConnections = new Connections();
+        Object.assign(updatedRUserConnections, userConnections);
+
+        await updatedRUserConnections.save();
+    }
+
+    return 'success';    
+}
+
+async function saveProfile(saveParams) {
+    const userConnections = await Connections.findOne({ userId: saveParams.userId });
+    
+    if(!userConnections && !userConnections.saved){
+        let savedMatchParams = {};
+            savedMatchParams.userId = saveParams.userId;
+            savedMatchParams.saved = [{
+                userId: saveParams.saveUserId,
+                savedAt: new Date(Date.now())
+            }]
+
+            const savedProfileRecord = new Connections(savedMatchParams);
+            await savedProfileRecord.save();
+    }else{
+        let savedParams = {
+            userId: saveParams.saveUserId,
+            savedAt: new Date(Date.now())
+        }
+
+        userConnections.saved.push(savedParams)
+        await userConnections.save();
+    }
+    return "success";
+}
+
+async function viewProfile(viewParams) {
+    const profileToView = await UserProfile.findOne({userId: viewParams.viewProfileId});
+    const userConnections = await Connections.findOne({ userId: viewParams.userId });
+    
+    if(profileToView) {
+        if(!userConnections && !userConnections.viewed){
+            let viewedProfileParams = {};
+                viewedProfileParams.userId = viewParams.userId;
+                viewedProfileParams.viewed = [{
+                    userId: viewParams.viewProfileId,
+                    viewedAt: new Date(Date.now())
+                }]
+                const viewedProfileRecord = new Connections(viewedProfileParams);
+                await viewedProfileRecord.save();
+        }else{
+            let viewedProfileParams = {
+                userId: viewParams.viewProfileId,
+                viewedAt: new Date(Date.now())
+            }
+
+            userConnections.viewed.push(viewedProfileParams)
+            await userConnections.save();
+        }
+
+        await notifcationService.createNotification({sender: userId, receiver: viewProfileId, type: 'view'});
+    }
+    else {
+        return 'Profile not found';
+    }
+
+    return profileToView;
 }
 
 async function getTopTenProfiles(userId) {
     const userProfile = await UserProfile.findOne({ userId: userId });
     const preferenceParams = await UserPreferences.findOne({ userId: userId });
-    const savedProfileParams = await SavedProfiles.findOne({ userId: userId });
+    const connectionsParams = await Connections.findOne({ userId: userId });
     
         const allMatches = await UserProfile.find({
             userId: {$ne: userProfile.userId},
             userId: {$nin: userProfile.blockedProfiles},
-            userId: {$nin: savedProfileParams.profiles.map(function(item){return item.userId;})},
             "locationInfo.country.id": {$in: preferenceParams.locationInfo.country},
+            userId: {$nin: connectionsParams.saved.map(function(item){return item.userId;})},
             "basicInfo.gender": {$eq: preferenceParams.basicInfo.lookingFor}
         }).select(['userId',
                 'basicInfo.firstName',
@@ -156,36 +337,12 @@ async function getTopTenProfiles(userId) {
         return allMatches;
 }
 
-async function saveMatches(saveParams){
-
-    const user = await SavedProfiles.findOne({ userId: saveParams.userId });
-    
-    if(!user){
-        let savedMatchParams = {};
-            savedMatchParams.userId = saveParams.userId;
-            savedMatchParams.profiles = [{
-                userId: saveParams.saveUserId,
-                savedAt: new Date(Date.now())
-            }]
-            const savedProfileRecord = new SavedProfiles(savedMatchParams);
-            await savedProfileRecord.save();
-    }else{
-        let savedParams = {
-            saveUserId: saveParams.saveUserId,
-            savedAt: new Date(Date.now())
-        }
-        user.profiles.push(savedParams)
-        await user.save();
-    }
-    return "success";
-}
-
 async function getTopTenSavedProfiles(userId){
-    const savedProfiles = await SavedProfiles.findOne({userId : userId});
+    const connections = await Connections.findOne({userId : userId});
 
-    if(savedProfiles){
+    if(connections && connections.saved){
         const data = await UserProfile.find({
-            userId: {$in: savedProfiles.profiles.map(function(item){return item.userId;})}
+            userId: {$in: connections.saved.map(function(item){return item.userId;})}
             }).select(['userId',
                 'basicInfo.firstName',
                 'basicInfo.lastName',
@@ -197,24 +354,5 @@ async function getTopTenSavedProfiles(userId){
         return data;
     }
 }
-async function getAll() {
-    return await User.find();
-}
-
-async function getProfileById({userId,viewProfileId}) {
-    const profile =  await UserProfile.findOne({userId: viewProfileId});
-
-    if(!profile){
-        return 'user not found';
-    }else{
-        await notifcationService.createNotification({sender: userId, receiver: viewProfileId, type: 'view'});
-        return profile;
-    }
-}
-
-async function _delete(id) {
-    await User.findByIdAndRemove(id);
-}
-
 
 
