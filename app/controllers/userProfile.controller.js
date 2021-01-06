@@ -48,7 +48,7 @@ function cancelRequest(req, res, next) {
 }
 
 function viewProfile(req, res, next) {
-    userProfileService.saveProfile(req.body)
+    userProfileService.viewProfile(req.body)
         .then((userProfile) => res.json(userProfile))
         .catch(err => next(err));
 }
