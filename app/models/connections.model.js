@@ -8,7 +8,7 @@ const schema = new Schema({
     blocked: {type: Array, required: false},
     requested: {type: Array, required: false},
     received: {type: Array, required: false},
-    accepted: {type: Array, require: false},
+    connected: {type: Array, require: false},
     rejected: {type: Array, require: false}
     }
 );

@@ -84,6 +84,10 @@ function getNotificationContent(senderUser, type)
     {
         content = senderUser.basicInfo.firstName + ' ' + senderUser.basicInfo.lastName + ' wants to connect with you!';
     }
+    else if (type === 'accept')
+    {
+        content = senderUser.basicInfo.firstName + ' ' + senderUser.basicInfo.lastName + ' has accepted your request!';
+    }
     else {
         content = content;
     }
