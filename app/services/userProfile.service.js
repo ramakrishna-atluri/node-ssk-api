@@ -183,7 +183,7 @@ async function connectProfile(connectParam) {
     const userConnections = await Connections.findOne({ userId: connectParam.userId });
     const receivingUserConnections = await Connections.findOne({ userId: connectParam.connectId });
     
-    if(!userConnections && !userConnections.requested){
+    if(!userConnections){
         let requestedProfileParams = {};
             requestedProfileParams.userId = connectParam.userId;
             requestedProfileParams.requested = [{
@@ -204,7 +204,7 @@ async function connectProfile(connectParam) {
         await userConnections.save();
     }
 
-    if(!receivingUserConnections && !receivingUserConnections.received){
+    if(!receivingUserConnections){
         let receivedProfileParams = {};
             receivedProfileParams.userId = connectParam.connectId;
             receivedProfileParams.received = [{
@@ -221,7 +221,7 @@ async function connectProfile(connectParam) {
             receivedAt: new Date(Date.now())
         }
 
-        userConnections.received.push(receivedParams)
+        receivingUserConnections.received.push(receivedParams)
         await userConnections.save();
     }
 
@@ -286,9 +286,9 @@ async function saveProfile(saveParams) {
 async function viewProfile(viewParams) {
     const profileToView = await UserProfile.findOne({userId: viewParams.viewProfileId});
     const userConnections = await Connections.findOne({ userId: viewParams.userId });
-    
     if(profileToView) {
-        if(!userConnections && !userConnections.viewed){
+        if(!userConnections){
+            
             let viewedProfileParams = {};
                 viewedProfileParams.userId = viewParams.userId;
                 viewedProfileParams.viewed = [{
@@ -297,7 +297,9 @@ async function viewProfile(viewParams) {
                 }]
                 const viewedProfileRecord = new Connections(viewedProfileParams);
                 await viewedProfileRecord.save();
+
         }else{
+            
             let viewedProfileParams = {
                 userId: viewParams.viewProfileId,
                 viewedAt: new Date(Date.now())
@@ -307,7 +309,7 @@ async function viewProfile(viewParams) {
             await userConnections.save();
         }
 
-        await notifcationService.createNotification({sender: userId, receiver: viewProfileId, type: 'view'});
+        await notifcationService.createNotification({sender: viewParams.userId, receiver: viewParams.viewProfileId, type: 'view'});
     }
     else {
         return 'Profile not found';
@@ -325,7 +327,7 @@ async function getTopTenProfiles(userId) {
             userId: {$ne: userProfile.userId},
             userId: {$nin: userProfile.blockedProfiles},
             "locationInfo.country.id": {$in: preferenceParams.locationInfo.country},
-            userId: {$nin: connectionsParams.saved.map(function(item){return item.userId;})},
+            userId: {$nin: connectionsParams && connectionsParams.saved  ? connectionsParams.saved.map(function(item){return item.userId;}) : []},
             "basicInfo.gender": {$eq: preferenceParams.basicInfo.lookingFor}
         }).select(['userId',
                 'basicInfo.firstName',
@@ -333,7 +335,7 @@ async function getTopTenProfiles(userId) {
                 'basicInfo.age',
                 'basicInfo.height',
                 'locationInfo',
-                'educationAndCareerInfo.workingAs']);
+                'educationAndCareerInfo']);
         return allMatches;
 }
 
@@ -342,14 +344,14 @@ async function getTopTenSavedProfiles(userId){
 
     if(connections && connections.saved){
         const data = await UserProfile.find({
-            userId: {$in: connections.saved.map(function(item){return item.userId;})}
+            userId: {$in: connections.saved  ? connections.saved.map(function(item){return item.userId;}) : []}
             }).select(['userId',
                 'basicInfo.firstName',
                 'basicInfo.lastName',
                 'basicInfo.age',
                 'basicInfo.height',
                 'locationInfo',
-                'educationAndCareerInfo.workingAs']);
+                'educationAndCareerInfo']);
 
         return data;
     }
