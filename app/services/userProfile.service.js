@@ -14,6 +14,9 @@ module.exports = {
     viewProfile,
     connectProfile,
     cancelRequest,
+    //removeProfile,
+    acceptRequest,
+    //rejectRequest,
     getProfile,
     getTopTenProfiles,
     getTopTenSavedProfiles,
@@ -254,6 +257,48 @@ async function cancelRequest(disconnectParam) {
 
         await updatedRUserConnections.save();
     }
+
+    return 'success';    
+}
+
+async function acceptRequest(acceptParam) {
+    let acceptingUserConnections = await Connections.findOne({ userId: acceptParam.userId });
+    let requestingUserConnections = await Connections.findOne({ userId: acceptParam.acceptId });
+
+    if(acceptingUserConnections && acceptingUserConnections.received)
+    {
+        acceptingUserConnections.received = acceptingUserConnections.received.filter(item => item.userId !== acceptParam.acceptId);
+        
+        let connectedParams = {
+            userId: acceptParam.acceptId,
+            connectedAt: new Date(Date.now())
+        }
+
+        acceptingUserConnections.connected.push(connectedParams);
+
+        const updatedUserConnections = new Connections();
+        Object.assign(updatedUserConnections, acceptingUserConnections);
+
+        await updatedUserConnections.save();       
+    }
+
+    if(requestingUserConnections && requestingUserConnections.requested) {
+        requestingUserConnections.requested = requestingUserConnections.requested.filter(item => item.userId !== acceptParam.userId);
+
+        let connectedParams = {
+            userId: acceptParam.userId,
+            connectedAt: new Date(Date.now())
+        }
+
+        requestingUserConnections.connected.push(connectedParams);
+
+        const updatedRUserConnections = new Connections();
+        Object.assign(updatedRUserConnections, requestingUserConnections);
+
+        await updatedRUserConnections.save();
+    }
+
+    await notifcationService.createNotification({sender: acceptParam.userId, receiver: acceptParam.acceptId, type: 'accept'}); 
 
     return 'success';    
 }
