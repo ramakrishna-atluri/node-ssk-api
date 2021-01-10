@@ -11,6 +11,9 @@ router.post('/unblockProfile', unBlockProfile);
 router.post('/saveProfile', saveProfile);
 router.post('/connectProfile', connectProfile);
 router.post('/cancelRequest', cancelRequest);
+router.post('/removeProfile', removeProfile);
+router.post('/acceptRequest', acceptRequest);
+router.post('/rejectRequest', rejectRequest);
 router.post('/get-matches', getMatches);
 router.post('/get-top-ten-profiles', getTopTenProfiles);
 router.post('/get-top-ten-saved-profiles', getTopTenSavedProfiles);
@@ -43,6 +46,24 @@ function connectProfile(req, res, next) {
 
 function cancelRequest(req, res, next) {
     userProfileService.cancelRequest(req.body)
+        .then((response) => res.json(response))
+        .catch(err => next(err));
+}
+
+function removeProfile(req, res, next) {
+    userProfileService.removeProfile(req.body)
+        .then((response) => res.json(response))
+        .catch(err => next(err));
+}
+
+function acceptRequest(req, res, next) {
+    userProfileService.acceptRequest(req.body)
+        .then((response) => res.json(response))
+        .catch(err => next(err));
+}
+
+function rejectRequest(req, res, next) {
+    userProfileService.rejectRequest(req.body)
         .then((response) => res.json(response))
         .catch(err => next(err));
 }
