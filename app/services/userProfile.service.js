@@ -246,10 +246,7 @@ async function cancelRequest(cancelParam) {
     if(receivingUserConnections) {
         receivingUserConnections.received = receivingUserConnections.received.filter(item => item.userId !== cancelParam.userId);
 
-        const updatedRUserConnections = new Connections();
-        Object.assign(updatedRUserConnections, userConnections);
-
-        await updatedRUserConnections.save();
+        await receivingUserConnections.save();
     }
 
     return 'success';    
