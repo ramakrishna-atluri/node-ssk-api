@@ -14,10 +14,9 @@ module.exports = {
     viewProfile,
     connectProfile,
     cancelRequest,
-    //removeProfile,
+    removeProfile,
     acceptRequest,
-    //rejectRequest,
-    getProfile,
+    rejectRequest,
     getTopTenProfiles,
     getTopTenSavedProfiles,
 };
@@ -64,11 +63,6 @@ async function createProfile(profileParam) {
     profile.contactInfo.email = profile.contactInfo.maskedEmail;
 
     return profile;
-}
-
-async function getProfile(profileParam) {
-    //validate
-    return await UserProfile.find({ email: profileParam.contactInfo.email });
 }
 
 async function updateProfile(profileParam) {
@@ -184,13 +178,13 @@ async function unBlockProfile(unBlockParam) {
 
 async function connectProfile(connectParam) {
     const userConnections = await Connections.findOne({ userId: connectParam.userId });
-    const receivingUserConnections = await Connections.findOne({ userId: connectParam.connectId });
+    const receivingUserConnections = await Connections.findOne({ userId: connectParam.connectUserId });
     
     if(!userConnections){
         let requestedProfileParams = {};
             requestedProfileParams.userId = connectParam.userId;
             requestedProfileParams.requested = [{
-                userId: connectParam.connectId,
+                userId: connectParam.connectUserId,
                 requestedAt: new Date(Date.now())
             }]
 
@@ -199,7 +193,7 @@ async function connectProfile(connectParam) {
            
     }else{
         let requestedParams = {
-            userId: connectParam.connectId,
+            userId: connectParam.connectUserId,
             requestedAt: new Date(Date.now())
         }
 
@@ -209,7 +203,7 @@ async function connectProfile(connectParam) {
 
     if(!receivingUserConnections){
         let receivedProfileParams = {};
-            receivedProfileParams.userId = connectParam.connectId;
+            receivedProfileParams.userId = connectParam.connectUserId;
             receivedProfileParams.received = [{
                 userId: connectParam.userId,
                 receivedAt: new Date(Date.now())
@@ -228,29 +222,29 @@ async function connectProfile(connectParam) {
         await userConnections.save();
     }
 
-    await notifcationService.createNotification({sender: connectParam.userId, receiver: connectParam.connectId, type: 'connect'});
+    await notifcationService.createNotification({sender: connectParam.userId, receiver: connectParam.connectUserId, type: 'connect'});
 
     return "success";    
 }
 
-async function cancelRequest(disconnectParam) {
-    let userConnections = await Connections.findOne({ userId: disconnectParam.userId });
-    let receivingUserConnections = await Connections.findOne({ userId: disconnectParam.disconnectId });
+async function cancelRequest(cancelParam) {
+    let userConnections = await Connections.findOne({ userId: cancelParam.userId });
+    let receivingUserConnections = await Connections.findOne({ userId: cancelParam.cancelUserId });
 
-    if(userConnections && userConnections.requested)
+    if(userConnections)
     {
-        userConnections.requested = userConnections.requested.filter(item => item.userId !== disconnectParam.disconnectId);
+        userConnections.requested = userConnections.requested.filter(item => item.userId !== cancelParam.cancelUserId);
 
         const updatedUserConnections = new Connections();
         Object.assign(updatedUserConnections, userConnections);
 
         await updatedUserConnections.save();
 
-        await notifcationService.deleteNotification({sender: connectParam.userId, receiver: connectParam.connectId, type: 'connect'});        
+        await notifcationService.deleteNotification({sender: cancelParam.userId, receiver: cancelParam.cancelUserId, type: 'connect'});        
     }
 
-    if(receivingUserConnections && receivingUserConnections.received) {
-        receivingUserConnections.received = receivingUserConnections.received.filter(item => item.userId !== disconnectParam.userId);
+    if(receivingUserConnections) {
+        receivingUserConnections.received = receivingUserConnections.received.filter(item => item.userId !== cancelParam.userId);
 
         const updatedRUserConnections = new Connections();
         Object.assign(updatedRUserConnections, userConnections);
@@ -263,14 +257,14 @@ async function cancelRequest(disconnectParam) {
 
 async function acceptRequest(acceptParam) {
     let acceptingUserConnections = await Connections.findOne({ userId: acceptParam.userId });
-    let requestingUserConnections = await Connections.findOne({ userId: acceptParam.acceptId });
+    let requestingUserConnections = await Connections.findOne({ userId: acceptParam.requestUserId });
 
-    if(acceptingUserConnections && acceptingUserConnections.received)
+    if(acceptingUserConnections)
     {
-        acceptingUserConnections.received = acceptingUserConnections.received.filter(item => item.userId !== acceptParam.acceptId);
+        acceptingUserConnections.received = acceptingUserConnections.received.filter(item => item.userId !== acceptParam.requestUserId);
         
         let connectedParams = {
-            userId: acceptParam.acceptId,
+            userId: acceptParam.requestUserId,
             connectedAt: new Date(Date.now())
         }
 
@@ -282,7 +276,7 @@ async function acceptRequest(acceptParam) {
         await updatedUserConnections.save();       
     }
 
-    if(requestingUserConnections && requestingUserConnections.requested) {
+    if(requestingUserConnections) {
         requestingUserConnections.requested = requestingUserConnections.requested.filter(item => item.userId !== acceptParam.userId);
 
         let connectedParams = {
@@ -298,7 +292,50 @@ async function acceptRequest(acceptParam) {
         await updatedRUserConnections.save();
     }
 
-    await notifcationService.createNotification({sender: acceptParam.userId, receiver: acceptParam.acceptId, type: 'accept'}); 
+    await notifcationService.createNotification({sender: acceptParam.userId, receiver: acceptParam.requestUserId, type: 'accept'}); 
+
+    return 'success';    
+}
+
+async function rejectRequest(rejectParam) {
+    let rejectingUserConnections = await Connections.findOne({ userId: rejectParam.userId });
+
+    if(rejectingUserConnections)
+    {
+        rejectingUserConnections.received = acceptingUserConnections.received.filter(item => item.userId !== rejectParam.requestUserId);
+        
+        let rejectedParams = {
+            userId: rejectParam.requestUserId,
+            rejectedAt: new Date(Date.now())
+        }
+
+        rejectingUserConnections.rejected.push(rejectedParams);
+
+        const updatedUserConnections = new Connections();
+        Object.assign(updatedUserConnections, rejectingUserConnections);
+
+        await updatedUserConnections.save();       
+    }
+
+    return 'success';    
+}
+
+async function removeProfile(removeParam) {
+    let userConnections = await Connections.findOne({ userId: removeParam.userId });
+    let removingUserConnections = await Connections.findOne({ userId: removeParam.removeUserId });
+
+    if(userConnections)
+    {
+        userConnections.connected = userConnections.connected.filter(item => item.userId !== removeParam.removeUserId);
+
+        await userConnections.save();       
+    }
+
+    if(removingUserConnections) {
+        removingUserConnections.connected = removingUserConnections.connected.filter(item => item.userId !== removeParam.userId);
+
+        await removingUserConnections.save();
+    }
 
     return 'success';    
 }
@@ -306,7 +343,9 @@ async function acceptRequest(acceptParam) {
 async function saveProfile(saveParams) {
     const userConnections = await Connections.findOne({ userId: saveParams.userId });
     
-    if(!userConnections && !userConnections.saved){
+    console.log(userConnections);
+
+    if(!userConnections){
         let savedMatchParams = {};
             savedMatchParams.userId = saveParams.userId;
             savedMatchParams.saved = [{
@@ -317,13 +356,16 @@ async function saveProfile(saveParams) {
             const savedProfileRecord = new Connections(savedMatchParams);
             await savedProfileRecord.save();
     }else{
-        let savedParams = {
-            userId: saveParams.saveUserId,
-            savedAt: new Date(Date.now())
-        }
-
-        userConnections.saved.push(savedParams)
-        await userConnections.save();
+        if(!userConnections.saved.filter(item => item.userId === saveParams.saveUserId))
+        {
+            let savedParams = {
+                userId: saveParams.saveUserId,
+                savedAt: new Date(Date.now())
+            }
+    
+            userConnections.saved.push(savedParams)
+            await userConnections.save();
+        }        
     }
     return "success";
 }
