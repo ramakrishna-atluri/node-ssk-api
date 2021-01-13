@@ -192,13 +192,16 @@ async function connectProfile(connectParam) {
             await requestedProfileRecord.save();
            
     }else{
-        let requestedParams = {
-            userId: connectParam.connectUserId,
-            requestedAt: new Date(Date.now())
-        }
-
-        userConnections.requested.push(requestedParams)
-        await userConnections.save();
+        if(!userConnections.requested.filter(item => item.userId === connectParam.connectUserId))
+        {
+            let requestedParams = {
+                userId: connectParam.connectUserId,
+                requestedAt: new Date(Date.now())
+            }
+    
+            userConnections.requested.push(requestedParams)
+            await userConnections.save();
+        }        
     }
 
     if(!receivingUserConnections){
@@ -213,18 +216,24 @@ async function connectProfile(connectParam) {
             await receivedProfileRecord.save();
            
     }else{
-        let receivedParams = {
-            userId: connectParam.userId,
-            receivedAt: new Date(Date.now())
-        }
 
-        receivingUserConnections.received.push(receivedParams)
-        await userConnections.save();
+        if(!receivingUserConnections.received.filter(item => item.userId === connectParam.userId)) {
+            
+            let receivedParams = {
+                userId: connectParam.userId,
+                receivedAt: new Date(Date.now())
+            }
+
+            receivingUserConnections.received.push(receivedParams)
+            await userConnections.save();
+        }
+    }
+    
+    if(!userConnections.requested.filter(item => item.userId === connectParam.connectUserId)) {
+        await notifcationService.createNotification({sender: connectParam.userId, receiver: connectParam.connectUserId, type: 'connect'});
     }
 
-    await notifcationService.createNotification({sender: connectParam.userId, receiver: connectParam.connectUserId, type: 'connect'});
-
-    return "success";    
+    return userConnections;    
 }
 
 async function cancelRequest(cancelParam) {
@@ -252,7 +261,7 @@ async function cancelRequest(cancelParam) {
         await updatedRUserConnections.save();
     }
 
-    return 'success';    
+    return userConnections;    
 }
 
 async function acceptRequest(acceptParam) {
@@ -294,7 +303,7 @@ async function acceptRequest(acceptParam) {
 
     await notifcationService.createNotification({sender: acceptParam.userId, receiver: acceptParam.requestUserId, type: 'accept'}); 
 
-    return 'success';    
+    return acceptingUserConnections;    
 }
 
 async function rejectRequest(rejectParam) {
@@ -317,7 +326,7 @@ async function rejectRequest(rejectParam) {
         await updatedUserConnections.save();       
     }
 
-    return 'success';    
+    return rejectingUserConnections;    
 }
 
 async function removeProfile(removeParam) {
@@ -337,7 +346,7 @@ async function removeProfile(removeParam) {
         await removingUserConnections.save();
     }
 
-    return 'success';    
+    return userConnections;    
 }
 
 async function saveProfile(saveParams) {
@@ -367,12 +376,13 @@ async function saveProfile(saveParams) {
             await userConnections.save();
         }        
     }
-    return "success";
+    return userConnections;
 }
 
 async function viewProfile(viewParams) {
     const profileToView = await UserProfile.findOne({userId: viewParams.viewProfileId});
     const userConnections = await Connections.findOne({ userId: viewParams.userId });
+
     if(profileToView) {
         if(!userConnections){
             
@@ -386,23 +396,30 @@ async function viewProfile(viewParams) {
                 await viewedProfileRecord.save();
 
         }else{
-            
-            let viewedProfileParams = {
-                userId: viewParams.viewProfileId,
-                viewedAt: new Date(Date.now())
+            if(!userConnections.viewed.filter(item => item.userId === viewParams.viewProfileId)) {
+                let viewedProfileParams = {
+                    userId: viewParams.viewProfileId,
+                    viewedAt: new Date(Date.now())
+                }
+
+                userConnections.viewed.push(viewedProfileParams)
+                await userConnections.save();
             }
-
-            userConnections.viewed.push(viewedProfileParams)
-            await userConnections.save();
         }
-
-        await notifcationService.createNotification({sender: viewParams.userId, receiver: viewParams.viewProfileId, type: 'view'});
+        if(!userConnections.viewed.filter(item => item.userId === viewParams.viewProfileId)) {
+            await notifcationService.createNotification({sender: viewParams.userId, receiver: viewParams.viewProfileId, type: 'view'});
+        }
     }
     else {
         return 'Profile not found';
     }
 
-    return profileToView;
+    const body = {
+        profileData : profileToView,
+        connectionsData : userConnections
+    }
+
+    return body;
 }
 
 async function getTopTenProfiles(userId) {
