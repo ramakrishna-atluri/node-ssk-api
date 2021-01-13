@@ -177,7 +177,7 @@ async function unBlockProfile(unBlockParam) {
 }
 
 async function connectProfile(connectParam) {
-    const userConnections = await Connections.findOne({ userId: connectParam.userId });
+    let userConnections = await Connections.findOne({ userId: connectParam.userId });
     const receivingUserConnections = await Connections.findOne({ userId: connectParam.connectUserId });
     
     if(!userConnections){
@@ -190,9 +190,11 @@ async function connectProfile(connectParam) {
 
             const requestedProfileRecord = new Connections(requestedProfileParams);
             await requestedProfileRecord.save();
+
+            userConnections = requestedProfileRecord;
            
     }else{
-        if(!userConnections.requested.filter(item => item.userId === connectParam.connectUserId))
+        if(userConnections.requested.filter(item => item.userId !== connectParam.connectUserId))
         {
             let requestedParams = {
                 userId: connectParam.connectUserId,
@@ -229,9 +231,9 @@ async function connectProfile(connectParam) {
         }
     }
     
-    if(!userConnections.requested.filter(item => item.userId === connectParam.connectUserId)) {
+    // if(!userConnections.requested.filter(item => item.userId === connectParam.connectUserId)) {
         await notifcationService.createNotification({sender: connectParam.userId, receiver: connectParam.connectUserId, type: 'connect'});
-    }
+    //}
 
     return userConnections;    
 }
@@ -347,7 +349,7 @@ async function removeProfile(removeParam) {
 }
 
 async function saveProfile(saveParams) {
-    const userConnections = await Connections.findOne({ userId: saveParams.userId });
+    let userConnections = await Connections.findOne({ userId: saveParams.userId });
     
     console.log(userConnections);
 
@@ -361,8 +363,10 @@ async function saveProfile(saveParams) {
 
             const savedProfileRecord = new Connections(savedMatchParams);
             await savedProfileRecord.save();
+
+            userConnections = savedProfileRecord;
     }else{
-        if(!userConnections.saved.filter(item => item.userId === saveParams.saveUserId))
+        if(userConnections.saved.filter(item => item.userId !== saveParams.saveUserId))
         {
             let savedParams = {
                 userId: saveParams.saveUserId,
@@ -378,7 +382,7 @@ async function saveProfile(saveParams) {
 
 async function viewProfile(viewParams) {
     const profileToView = await UserProfile.findOne({userId: viewParams.viewProfileId});
-    const userConnections = await Connections.findOne({ userId: viewParams.userId });
+    let userConnections = await Connections.findOne({ userId: viewParams.userId });
 
     if(profileToView) {
         if(!userConnections){
@@ -391,6 +395,8 @@ async function viewProfile(viewParams) {
                 }]
                 const viewedProfileRecord = new Connections(viewedProfileParams);
                 await viewedProfileRecord.save();
+
+                userConnections = viewedProfileRecord;
 
         }else{
             if(!userConnections.viewed.filter(item => item.userId === viewParams.viewProfileId)) {
