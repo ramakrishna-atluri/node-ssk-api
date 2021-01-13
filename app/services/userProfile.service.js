@@ -219,7 +219,7 @@ async function connectProfile(connectParam) {
            
     }else{
 
-        if(!receivingUserConnections.received.filter(item => item.userId === connectParam.userId)) {
+        if(receivingUserConnections.received.filter(item => item.userId !== connectParam.userId)) {
             
             let receivedParams = {
                 userId: connectParam.userId,
@@ -227,7 +227,7 @@ async function connectProfile(connectParam) {
             }
 
             receivingUserConnections.received.push(receivedParams)
-            await userConnections.save();
+            await receivingUserConnections.save();
         }
     }
     
@@ -307,10 +307,11 @@ async function acceptRequest(acceptParam) {
 
 async function rejectRequest(rejectParam) {
     let rejectingUserConnections = await Connections.findOne({ userId: rejectParam.userId });
+    let requestingUserConnections = await Connections.findOne({userId: rejectParam.requestUserId});
 
     if(rejectingUserConnections)
     {
-        rejectingUserConnections.received = acceptingUserConnections.received.filter(item => item.userId !== rejectParam.requestUserId);
+        rejectingUserConnections.received = rejectingUserConnections.received.filter(item => item.userId !== rejectParam.requestUserId);
         
         let rejectedParams = {
             userId: rejectParam.requestUserId,
@@ -323,6 +324,11 @@ async function rejectRequest(rejectParam) {
         Object.assign(updatedUserConnections, rejectingUserConnections);
 
         await updatedUserConnections.save();       
+    }
+
+    if(requestingUserConnections){
+        requestingUserConnections.requested = requestingUserConnections.requested.filter(item => item.userId !== rejectParam.userId);
+        await requestingUserConnections.save();
     }
 
     return rejectingUserConnections;    
