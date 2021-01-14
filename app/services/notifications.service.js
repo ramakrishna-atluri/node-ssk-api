@@ -28,6 +28,12 @@ async function createNotification({sender, receiver, type, content})
         await notification.save();        
     }   
 
+    if(existingNotification && existingNotification.isRead) {
+        existingNotification.isRead = false;
+
+        existingNotification.save();
+    }
+
     return 'success';
 }
 
@@ -61,7 +67,7 @@ async function deleteAllNotifications({userId})
 
 async function getNotifications({userId})
 {
-    const notifications = await Notifications.find({receiver: userId}).select(['-createdAt', '-updatedAt']);
+    const notifications = await Notifications.find({receiver: userId}).sort([['updatedAt', 'descending']]).select(['-createdAt', '-updatedAt']);
 
     await Notifications.updateMany({receiver: userId, type: 'view'}, { $set: { isRead: true, } } , { multi: true });
 
