@@ -270,6 +270,8 @@ async function acceptRequest(acceptParam) {
     if(acceptingUserConnections)
     {
         acceptingUserConnections.received = acceptingUserConnections.received.filter(item => item.userId !== acceptParam.requestUserId);
+        acceptingUserConnections.saved = acceptingUserConnections.saved.filter(item => item.userId !== acceptParam.requestUserId);
+        acceptingUserConnections.saved = acceptingUserConnections.saved.filter(item => item.userId !== acceptParam.requestUserId);
         
         let connectedParams = {
             userId: acceptParam.requestUserId,
@@ -356,8 +358,6 @@ async function removeProfile(removeParam) {
 
 async function saveProfile(saveParams) {
     let userConnections = await Connections.findOne({ userId: saveParams.userId });
-    
-    console.log(userConnections);
 
     if(!userConnections){
         let savedMatchParams = {};
@@ -387,7 +387,7 @@ async function saveProfile(saveParams) {
 }
 
 async function viewProfile(viewParams) {
-    const profileToView = await UserProfile.findOne({userId: viewParams.viewProfileId});
+    let profileToView = await UserProfile.findOne({userId: viewParams.viewProfileId});
     let userConnections = await Connections.findOne({ userId: viewParams.userId });
 
     if(profileToView) {
@@ -405,7 +405,7 @@ async function viewProfile(viewParams) {
                 userConnections = viewedProfileRecord;
 
         }else{
-            if(!userConnections.viewed.filter(item => item.userId === viewParams.viewProfileId)) {
+            if(userConnections.viewed.filter(item => item.userId !== viewParams.viewProfileId)) {
                 let viewedProfileParams = {
                     userId: viewParams.viewProfileId,
                     viewedAt: new Date(Date.now())
@@ -415,13 +415,16 @@ async function viewProfile(viewParams) {
                 await userConnections.save();
             }
         }
-        if(!userConnections.viewed.filter(item => item.userId === viewParams.viewProfileId)) {
+        if(userConnections.viewed.filter(item => item.userId !== viewParams.viewProfileId)) {
             await notifcationService.createNotification({sender: viewParams.userId, receiver: viewParams.viewProfileId, type: 'view'});
         }
     }
     else {
         return 'Profile not found';
     }
+
+    profileToView.contactInfo.contactNumber = profileToView.contactInfo.maskedContactNumber;
+    profileToView.contactInfo.email = profileToView.contactInfo.maskedEmail;
 
     const body = {
         profileData : profileToView,
