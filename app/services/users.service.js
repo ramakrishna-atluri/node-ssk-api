@@ -83,10 +83,10 @@ async function getUser({ userId }) {
     const userPreferenceParams = await UserPreferences.findOne({userId : user.userId});
     let topTenProfiles = [];
     if(userPreferenceParams){
-        topTenProfiles = await userProfileService.getTopTenProfiles(userId);
+        topTenProfiles = await userProfileService.getTopMatches({userId});
     }
 
-    const topTenSavedProfiles = await userProfileService.getTopTenSavedProfiles(user.userId);
+    const topTenSavedProfiles = await userProfileService.getTopSavedMatches({userId});
 
     const notificationCount = await notificationService.getNotificationCount({userId});
 
