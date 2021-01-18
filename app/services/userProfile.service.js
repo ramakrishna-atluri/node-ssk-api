@@ -17,8 +17,10 @@ module.exports = {
     removeProfile,
     acceptRequest,
     rejectRequest,
-    getTopTenProfiles,
-    getTopTenSavedProfiles,
+    getTopMatches,
+    getTopSavedMatches,
+    getAllMatches,
+    getAllSavedMatches
 };
 
 async function createProfile(profileParam) {
@@ -434,18 +436,28 @@ async function viewProfile(viewParams) {
     return body;
 }
 
-async function getTopTenProfiles(userId) {
+async function getTopMatches({userId}) {
     const userProfile = await UserProfile.findOne({ userId: userId });
     const preferenceParams = await UserPreferences.findOne({ userId: userId });
     const connectionsParams = await Connections.findOne({ userId: userId });
     
         const allMatches = await UserProfile.find({
-            userId: {$ne: userProfile.userId},
-            userId: {$nin: userProfile.blockedProfiles},
-            "locationInfo.country.id": {$in: preferenceParams.locationInfo.country},
-            userId: {$nin: connectionsParams && connectionsParams.saved  ? connectionsParams.saved.map(function(item){return item.userId;}) : []},
-            "basicInfo.gender": {$eq: preferenceParams.basicInfo.lookingFor}
-        }).select(['userId',
+            $and : [
+                {userId: {$ne: userProfile.userId}},
+                {userId: {$nin: connectionsParams && connectionsParams.blocked ? connectionsParams.blocked.map(function(item){return item.userId;}) : []}},
+                {userId: {$nin: connectionsParams && connectionsParams.saved  ? connectionsParams.saved.map(function(item){return item.userId;}) : []}},
+                {
+                    $or: [
+                        {"locationInfo.country.id": {$in: preferenceParams.locationInfo.country}},
+                        {"locationInfo.state.id": {$in: preferenceParams.locationInfo.state}},
+                        {"locationInfo.city.id": {$in: preferenceParams.locationInfo.city}}
+                    ]
+                },                
+                {"basicInfo.gender": {$eq: preferenceParams.basicInfo.lookingFor}},
+                {"basicInfo.age": { $gt :  preferenceParams.basicInfo.minAge, $lt : preferenceParams.basicInfo.maxAge}},
+                ]
+           
+            }).skip(0).limit(10).select(['userId',
                 'basicInfo.firstName',
                 'basicInfo.lastName',
                 'basicInfo.age',
@@ -455,7 +467,65 @@ async function getTopTenProfiles(userId) {
         return allMatches;
 }
 
-async function getTopTenSavedProfiles(userId){
+async function getTopSavedMatches({userId}){
+    const connections = await Connections.findOne({userId : userId});
+
+    if(connections && connections.saved){
+        const data = await UserProfile.find({
+            userId: {$in: connections.saved  ? connections.saved.map(function(item){return item.userId;}) : []}
+            }).skip(0).limit(10).select(['userId',
+                'basicInfo.firstName',
+                'basicInfo.lastName',
+                'basicInfo.age',
+                'basicInfo.height',
+                'locationInfo',
+                'educationAndCareerInfo']);
+
+        return data;
+    }
+}
+
+async function getAllMatches({userId, page}){
+    const userProfile = await UserProfile.findOne({ userId: userId });
+    const preferenceParams = await UserPreferences.findOne({ userId: userId });
+    const connectionsParams = await Connections.findOne({ userId: userId });
+    
+        const allMatches = await UserProfile.find({
+            $and : [
+                {userId: {$ne: userProfile.userId}},
+                {userId: {$nin: connectionsParams && connectionsParams.blocked ? connectionsParams.blocked.map(function(item){return item.userId;}) : []}},
+                {userId: {$nin: connectionsParams && connectionsParams.saved  ? connectionsParams.saved.map(function(item){return item.userId;}) : []}},
+                {
+                    $or: [
+                        {"locationInfo.country.id": {$in: preferenceParams.locationInfo.country}},
+                        {"locationInfo.state.id": {$in: preferenceParams.locationInfo.state}},
+                        {"locationInfo.city.id": {$in: preferenceParams.locationInfo.city}},
+                        // {"familyInfo.familyType" : {$eq: preferenceParams.familyDetails.familyType}},
+                        // {"familyInfo.familyValues" : {$eq: preferenceParams.familyDetails.familyValues}},
+                        // {"kundaliDetails.nakshatra" : {$eq: preferenceParams.kundaliDetails.nakshatra}},
+                        // {"kundaliDetails.zodiacSign": {$eq: preferenceParams.kundaliDetails.zodiacSign}},
+                        // {"lifeStyleInfo.eatingHabits": {$eq: preferenceParams.lifeStyleInfo.eatingHabits}},
+                    ]
+                },                
+                {"basicInfo.gender": {$eq: preferenceParams.basicInfo.lookingFor}},
+                {"basicInfo.age": { $gt :  preferenceParams.basicInfo.minAge, $lt : preferenceParams.basicInfo.maxAge}},
+                // {"basicInfo.maritalStatus" : { $cond: { if: { $eq: [ "$preferenceParams.basicInfo.maritalStatus", "Doesn't Matter" ] }, then: '', else: preferenceParams.basicInfo.maritalStatus } }}
+            ]
+           
+            }).select(['userId',
+                'basicInfo.firstName',
+                'basicInfo.lastName',
+                'basicInfo.age',
+                'basicInfo.height',
+                'locationInfo',
+                'educationAndCareerInfo']);
+
+
+        return getResponseJson(allMatches, page);
+    
+}
+
+async function getAllSavedMatches({userId, page}){
     const connections = await Connections.findOne({userId : userId});
 
     if(connections && connections.saved){
@@ -469,8 +539,22 @@ async function getTopTenSavedProfiles(userId){
                 'locationInfo',
                 'educationAndCareerInfo']);
 
-        return data;
+        return getResponseJson(data, page);
     }
+    
 }
 
+async function getResponseJson(data, page) {
+    const pageSize = 20;
+    const recordsCount = data.length;
+    const pageCount = Math.ceil(recordsCount / pageSize);    
 
+    if (!page) { page = 1;}
+
+    return body = {
+        "page": page,
+        "pageCount": pageCount,
+        "recordsCount": recordsCount,
+        "records" : data.slice(page * 10 - 10, page * 10)
+    };
+}

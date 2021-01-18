@@ -14,9 +14,10 @@ router.post('/cancelRequest', cancelRequest);
 router.post('/removeProfile', removeProfile);
 router.post('/acceptRequest', acceptRequest);
 router.post('/rejectRequest', rejectRequest);
-router.post('/get-matches', getMatches);
-router.post('/get-top-ten-profiles', getTopTenProfiles);
-router.post('/get-top-ten-saved-profiles', getTopTenSavedProfiles);
+router.post('/getTopMatches', getTopMatches);
+router.post('/getTopSavedMatches', getTopSavedMatches);
+router.post('/getAllMatches', getAllMatches);
+router.post('/getAllSavedMatches', getAllSavedMatches);
 
 module.exports = router;
 
@@ -74,20 +75,26 @@ function viewProfile(req, res, next) {
         .catch(err => next(err));
 }
 
-function getMatches(req, res, next) {
-    userProfileService.getMatches(req.body)
+function getAllMatches(req, res, next) {
+    userProfileService.getAllMatches(req.body)
         .then((matchList) => res.json(matchList))
         .catch(err => next(err));
 }
 
-function getTopTenProfiles(req, res, next) {
-    userProfileService.getTopTenProfiles(req.body)
+function getAllSavedMatches(req, res, next) {
+    userProfileService.getAllSavedMatches(req.body)
         .then((matchList) => res.json(matchList))
         .catch(err => next(err));
 }
 
-function getTopTenSavedProfiles(req, res, next) {
-    userProfileService.getTopTenSavedProfiles(req.body)
+function getTopMatches(req, res, next) {
+    userProfileService.getTopMatches(req.body)
+        .then((matchList) => res.json(matchList))
+        .catch(err => next(err));
+}
+
+function getTopSavedMatches(req, res, next) {
+    userProfileService.getTopSavedMatches(req.body)
         .then((matchList) => res.json(matchList))
         .catch(err => next(err));
 }
