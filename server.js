@@ -21,6 +21,7 @@ app.use('/counter', require('./app/controllers/counter.controller'));
 app.use('/profile', require('./app/controllers/userProfile.controller'));
 app.use('/preferences', require('./app/controllers/userPreferences.controller'));
 app.use('/notifications', require('./app/controllers/notifications.controller'));
+app.use('/connections', require('./app/controllers/connections.controller'));
 
 // Add headers
 app.use(function (req, res, next) {

@@ -1,5 +1,6 @@
 const db = require('../helpers/db');
 const notifcationService = require('./notifications.service');
+const { getResponseJson } = require('../helpers/common');
 const UserPreferences = db.UserPreferences;
 const UserProfile = db.UserProfile;
 const User = db.User;
@@ -393,7 +394,7 @@ async function viewProfile(viewParams) {
     let userConnections = await Connections.findOne({ userId: viewParams.userId });
 
     if(profileToView) {
-        if(!userConnections){
+        if(!userConnections) {
             
             let viewedProfileParams = {};
                 viewedProfileParams.userId = viewParams.userId;
@@ -469,9 +470,10 @@ async function getTopMatches({userId}) {
 
 async function getTopSavedMatches({userId}){
     const connections = await Connections.findOne({userId : userId});
+    let data = {};
 
     if(connections && connections.saved){
-        const data = await UserProfile.find({
+        data = await UserProfile.find({
             userId: {$in: connections.saved  ? connections.saved.map(function(item){return item.userId;}) : []}
             }).skip(0).limit(10).select(['userId',
                 'basicInfo.firstName',
@@ -480,9 +482,9 @@ async function getTopSavedMatches({userId}){
                 'basicInfo.height',
                 'locationInfo',
                 'educationAndCareerInfo']);
-
-        return data;
     }
+
+    return data;
 }
 
 async function getAllMatches({userId, page}){
@@ -527,9 +529,10 @@ async function getAllMatches({userId, page}){
 
 async function getAllSavedMatches({userId, page}){
     const connections = await Connections.findOne({userId : userId});
+    let data = {};
 
     if(connections && connections.saved){
-        const data = await UserProfile.find({
+        data = await UserProfile.find({
             userId: {$in: connections.saved  ? connections.saved.map(function(item){return item.userId;}) : []}
             }).select(['userId',
                 'basicInfo.firstName',
@@ -537,24 +540,9 @@ async function getAllSavedMatches({userId, page}){
                 'basicInfo.age',
                 'basicInfo.height',
                 'locationInfo',
-                'educationAndCareerInfo']);
-
-        return getResponseJson(data, page);
+                'educationAndCareerInfo']);        
     }
+
+    return getResponseJson(data, page);
     
-}
-
-async function getResponseJson(data, page) {
-    const pageSize = 20;
-    const recordsCount = data.length;
-    const pageCount = Math.ceil(recordsCount / pageSize);    
-
-    if (!page) { page = 1;}
-
-    return body = {
-        "page": page,
-        "pageCount": pageCount,
-        "recordsCount": recordsCount,
-        "records" : data.slice(page * 10 - 10, page * 10)
-    };
 }
