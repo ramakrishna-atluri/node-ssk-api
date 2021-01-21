@@ -10,6 +10,7 @@ const { response } = require('express');
 const userProfileService = require('./userProfile.service');
 const { SavedProfiles } = require('../helpers/db');
 const notificationService = require('./notifications.service');
+const connectionsService = require('./connections.service');
 const User = db.User;
 const UserProfile = db.UserProfile;
 const UserPreferences= db.UserPreferences;
@@ -72,6 +73,8 @@ async function authenticate({ email, password, ipAddress }) {
 }
 
 async function getUser({ userId }) {
+    
+    let topTenProfiles = [];
     const user = await User.findOne({ userId });
    
     let userProfileParams = await UserProfile.findOne({userId : user.userId});
@@ -81,22 +84,23 @@ async function getUser({ userId }) {
     }
 
     const userPreferenceParams = await UserPreferences.findOne({userId : user.userId});
-    let topTenProfiles = [];
     if(userPreferenceParams){
         topTenProfiles = await userProfileService.getTopMatches({userId});
     }
 
     const topTenSavedProfiles = await userProfileService.getTopSavedMatches({userId});
-
     const notificationCount = await notificationService.getNotificationCount({userId});
+    const connectionsCount = await connectionsService.getConnectedCount({userId});
+    const receivedCount = await connectionsService.getReceivedCount({userId});
 
     let body = {
         userProfile : userProfileParams,
         userPreferences : userPreferenceParams,
         topTenProfiles: topTenProfiles,
         topTenSavedProfiles: topTenSavedProfiles,
-        notificationCount: notificationCount
-        
+        notificationCount: notificationCount,
+        connectionsCount: connectionsCount,
+        receivedCount: receivedCount        
     }
     return body;
 }
