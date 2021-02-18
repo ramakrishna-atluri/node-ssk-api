@@ -18,6 +18,7 @@ router.post('/getTopMatches', getTopMatches);
 router.post('/getTopSavedMatches', getTopSavedMatches);
 router.post('/getAllMatches', getAllMatches);
 router.post('/getAllSavedMatches', getAllSavedMatches);
+router.post('/uploadPhoto', uploadPhoto);
 
 module.exports = router;
 
@@ -123,4 +124,10 @@ function unBlockProfile(req, res, next) {
         }
     })
     .catch(err => next(err));
+}
+
+function uploadPhoto(req, res, next) {
+    userProfileService.uploadPhoto(req.body)
+    .then((response) => res.json(response))
+        .catch(err => next(err));
 }

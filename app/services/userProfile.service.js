@@ -1,6 +1,7 @@
 const db = require('../helpers/db');
 const notifcationService = require('./notifications.service');
 const { getResponseJson } = require('../helpers/common');
+const uploadImage = require('../helpers/upload-images');
 const UserPreferences = db.UserPreferences;
 const UserProfile = db.UserProfile;
 const User = db.User;
@@ -21,7 +22,8 @@ module.exports = {
     getTopMatches,
     getTopSavedMatches,
     getAllMatches,
-    getAllSavedMatches
+    getAllSavedMatches,
+    uploadPhoto
 };
 
 async function createProfile(profileParam) {
@@ -447,6 +449,7 @@ async function getTopMatches({userId}) {
                 {userId: {$ne: userProfile.userId}},
                 {userId: {$nin: connectionsParams && connectionsParams.blocked ? connectionsParams.blocked.map(function(item){return item.userId;}) : []}},
                 {userId: {$nin: connectionsParams && connectionsParams.saved  ? connectionsParams.saved.map(function(item){return item.userId;}) : []}},
+                {userId: {$nin: connectionsParams && connectionsParams.connected  ? connectionsParams.connected.map(function(item){return item.userId;}) : []}},
                 {
                     $or: [
                         {"locationInfo.country.id": {$in: preferenceParams.locationInfo.country}},
@@ -496,7 +499,7 @@ async function getAllMatches({userId, page}){
             $and : [
                 {userId: {$ne: userProfile.userId}},
                 {userId: {$nin: connectionsParams && connectionsParams.blocked ? connectionsParams.blocked.map(function(item){return item.userId;}) : []}},
-                {userId: {$nin: connectionsParams && connectionsParams.saved  ? connectionsParams.saved.map(function(item){return item.userId;}) : []}},
+                {userId: {$nin: connectionsParams && connectionsParams.connected  ? connectionsParams.connected.map(function(item){return item.userId;}) : []}},
                 {
                     $or: [
                         {"locationInfo.country.id": {$in: preferenceParams.locationInfo.country}},
@@ -544,5 +547,12 @@ async function getAllSavedMatches({userId, page}){
     }
 
     return getResponseJson(data, page);
+    
+}
+
+async function uploadPhoto(formData,config){
+    console.log(formData)
+    let response = await uploadImage(formData);
+    console.log(response);
     
 }

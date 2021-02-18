@@ -11,5 +11,9 @@
             "pass": "Dinesmore"
         },
         "secure":true
-    }
+    },
+    "awsAccessKey":"AKIAINTWAPRESYALSZZA",
+    "awsSecretAccessKey":"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",
+    "bucketName":"ssktestbucket01",
+    "region":"US East (Ohio) us-east-2"
 }
