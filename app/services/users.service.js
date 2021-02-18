@@ -93,6 +93,8 @@ async function getUser({ userId }) {
     const connectionsCount = await connectionsService.getConnectedCount({userId});
     const receivedCount = await connectionsService.getReceivedCount({userId});
 
+    const userConnections = await Connections.findOne({ userId: userId });
+
     let body = {
         userProfile : userProfileParams,
         userPreferences : userPreferenceParams,
@@ -100,7 +102,9 @@ async function getUser({ userId }) {
         topTenSavedProfiles: topTenSavedProfiles,
         notificationCount: notificationCount,
         connectionsCount: connectionsCount,
-        receivedCount: receivedCount        
+        receivedCount: receivedCount,        
+        connectionsData: userConnections ? userConnections : {}
+        
     }
     return body;
 }
